@@ -260,7 +260,7 @@ function renderList(){
 function open(i){
   cur=i;const t=tasks[i];
   $('#tt').textContent=t.title;$('#td').textContent=t.desc;$('#tl').textContent=t.level;
-  $('#sql').value='';$('#out').innerHTML='';renderList();
+  $('#sql').value='';try{localStorage.removeItem('sqlt-draft-sql')}catch(e){}$('#out').innerHTML='';renderList();
   try{$('#exp').innerHTML='<h3 style="margin-top:22px">Ожидаемый результат</h3>'+table(runSql(t.sol))+(/order\s+by/i.test(t.sol)?'<div style="color:var(--mute);font-size:12px">Порядок строк важен.</div>':'')}catch(e){$('#exp').innerHTML=''}
 }
 $('#list').onclick=e=>{const d=e.target.closest('.task');if(d)open(+d.dataset.i)};
@@ -639,9 +639,17 @@ $('#authclose').onclick=()=>$('#authpanel').classList.remove('on');
 $('#alogin').onclick=()=>doAuth(false);
 $('#areg').onclick=()=>doAuth(true);
 $('#apass').onkeydown=e=>{if(e.key==='Enter')doAuth(false)};
+// Черновики полей ввода: текст сохраняется при наборе и восстанавливается после перехода между вкладками и перезагрузки
+const drafts={};
+try{for(const id of ['sql','sbq','aiq']){const v=localStorage.getItem('sqlt-draft-'+id);if(v)drafts[id]=v}}catch(e){}
 loadSession();
 showLesson(0);
 open(0);
+for(const id of ['sql','sbq','aiq']){
+  const el=document.getElementById(id);
+  if(drafts[id])el.value=drafts[id];
+  el.addEventListener('input',()=>{try{localStorage.setItem('sqlt-draft-'+id,el.value)}catch(e){}});
+}
 </script>
 </body>
 </html>
