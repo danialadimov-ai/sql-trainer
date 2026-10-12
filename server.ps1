@@ -85,7 +85,8 @@ $handler = {
         # ----- API: общие аккаунты и песочницы на сервере -----
         if ($path -match '^api/') {
             try {
-                if ($path -eq 'api/auth' -and $method -eq 'POST') {
+                if ($path -eq 'api/ping') { Send-Json $stream '200 OK' @{ ok = $true } }
+                elseif ($path -eq 'api/auth' -and $method -eq 'POST') {
                     $d = $body | ConvertFrom-Json
                     $u = ('' + $d.u).ToLower().Trim()
                     $p = '' + $d.p

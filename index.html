@@ -547,7 +547,7 @@ function renderSb(){
   if(!isAdmin)$('#aipanel').classList.remove('on');
   $('#authbtn').textContent=canEdit?'Выйти':'Войти';
   $('#sbstate').innerHTML=canEdit
-    ?`<div class="msg ok">Вы вошли в аккаунт: можно выполнять любые запросы к базе. Изменения сохраняются ${onHttp?'на сервере — они доступны с любого компьютера':'в вашей личной копии (в этом браузере)'}.</div>`
+    ?`<div class="msg ok">Вы вошли в аккаунт: можно выполнять любые запросы к базе. Изменения сохраняются ${srvOn?'на сервере — они доступны с любого компьютера':'в вашей личной копии (в этом браузере)'}.</div>`
     :'<div class="msg info">Гостевой режим: можно только читать данные (SELECT). Чтобы изменять базу, нажмите «Войти» в шапке и создайте аккаунт.</div>';
   $('#sbreset').disabled=!canEdit;
   $('#sbschema').innerHTML=Object.keys(sb.tables).map(t=>{
@@ -556,7 +556,7 @@ function renderSb(){
 }
 function saveSb(){
   if(!canEdit)return;
-  if(onHttp&&sessHash){api('/api/sandbox',{u:acctName,h:sessHash,log:sbLog.slice(-300)}).catch(()=>{$('#sbout').insertAdjacentHTML('beforeend','<div class="msg bad">Не удалось сохранить изменения на сервере.</div>')});return}
+  if(srvOn&&sessHash){api('/api/sandbox',{u:acctName,h:sessHash,log:sbLog.slice(-300)}).catch(()=>{$('#sbout').insertAdjacentHTML('beforeend','<div class="msg bad">Не удалось сохранить изменения на сервере.</div>')});return}
   try{localStorage.setItem('sqlt-sb-'+acctName,JSON.stringify(sbLog.slice(-300)))}catch(e){$('#sbout').insertAdjacentHTML('beforeend','<div class="msg bad">Не удалось сохранить изменения в браузере.</div>')}
 }
 $('#sbrun').onclick=()=>{
@@ -578,14 +578,17 @@ $('#sbreset').onclick=()=>{
 const getUsers=()=>{try{return JSON.parse(localStorage.getItem('sqlt-users')||'{}')}catch(e){return{}}};
 // При работе через сервер аккаунты общие (users.json на сервере) — вход с любого компьютера
 const onHttp=location.protocol.startsWith('http');
-let sessHash='';
+let sessHash='',srvOn=false;
 async function api(path,body){
   const r=await fetch(path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined);
   const d=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(d.error||'Ошибка сервера ('+r.status+')');
   return d;
 }
-$('#authnote').textContent=onHttp?'Аккаунты хранятся на сервере: войти в свой аккаунт можно с любого компьютера сети. Это учебная защита, а не настоящая безопасность.':'Сайт открыт без сервера: аккаунты хранятся только в этом браузере.';
+const AUTHTXT={srv:'Аккаунты хранятся на сервере: войти в свой аккаунт можно с любого компьютера сети. Это учебная защита, а не настоящая безопасность.',loc:'Сервер с аккаунтами не обнаружен (статический хостинг или файл): аккаунты хранятся только в этом браузере.'};
+$('#authnote').textContent=AUTHTXT.loc;
+// Проверяем, есть ли за этим адресом наш сервер с API (статический хостинг ответит 404/405)
+const srvProbe=(async()=>{if(!onHttp)return;try{await api('/api/ping');srvOn=true;$('#authnote').textContent=AUTHTXT.srv}catch(e){srvOn=false}})();
 async function hashPw(pw,salt){
   if(!(window.crypto&&crypto.subtle))throw new Error('Для аккаунтов нужен защищённый контекст: откройте сайт через localhost (server.ps1) или https.');
   const enc=new TextEncoder(),k=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveBits']);
@@ -597,7 +600,8 @@ async function loadSession(){
   let raw=null;try{raw=localStorage.getItem('sqlt-session')}catch(e){}
   let u='',h='';
   if(raw){try{const o=JSON.parse(raw);if(o&&typeof o==='object'&&o.u){u=o.u;h=o.h||''}else u=String(o)}catch(e){u=raw}}
-  if(u&&h&&onHttp){
+  await srvProbe;
+  if(u&&h&&srvOn){
     try{
       const d=await api('/api/sandbox?u='+encodeURIComponent(u)+'&h='+encodeURIComponent(h));
       canEdit=true;acctName=u;sessHash=h;
@@ -616,7 +620,8 @@ async function doAuth(reg){
   if(!/^[a-z0-9_.-]{3,20}$/.test(u))return authMsg('Логин: 3–20 символов, латиница, цифры, _ . -','bad');
   if(p.length<6)return authMsg('Пароль не короче 6 символов.','bad');
   try{
-    if(onHttp){
+    await srvProbe;
+    if(srvOn){
       const d=await api('/api/auth',{op:reg?'reg':'login',u,p});
       localStorage.setItem('sqlt-session',JSON.stringify({u,h:d.h}));
       $('#apass').value='';$('#amsg').innerHTML='';$('#authpanel').classList.remove('on');loadSession();return;
