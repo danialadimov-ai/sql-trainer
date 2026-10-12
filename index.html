@@ -13,17 +13,19 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-header{display:flex;align-items:center;gap:16px;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card);flex-wrap:wrap}
+header{display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:18px 14px;border-right:1px solid var(--line);background:var(--card);position:fixed;inset:0 auto 0 0;width:230px;overflow-y:auto;z-index:40}
 .logo{font-weight:800;font-size:18px;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
-nav{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+nav{display:flex;flex-direction:column;gap:4px;flex:1}
+nav button{text-align:left}
 nav button,.btn{font:inherit;border:1px solid var(--line);background:transparent;color:var(--text);padding:8px 14px;border-radius:10px;cursor:pointer}
 nav button.on{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border-color:transparent}
 .btn.p{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border-color:transparent;font-weight:600}
 .btn:disabled{opacity:.5;cursor:default}
-main{max-width:1200px;margin:0 auto;padding:20px}
+main{max-width:1200px;margin:0 auto;padding:20px 20px 20px 250px}
 .view{display:none}.view.on{display:block}
-.grid{display:grid;grid-template-columns:260px 1fr 250px;gap:16px}
-@media(max-width:960px){.grid{grid-template-columns:1fr}}
+.grid{display:grid;grid-template-columns:290px 1fr;gap:16px}
+.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media(max-width:960px){.grid{grid-template-columns:1fr}header{position:static;width:auto;flex-direction:row;align-items:center;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line)}nav{flex-direction:row;flex-wrap:wrap}main{padding-left:20px}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
 h2,h3{margin:0 0 10px}h3{font-size:14px;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
 .task{display:flex;gap:8px;align-items:center;padding:9px 10px;border-radius:10px;cursor:pointer;border:1px solid transparent}
@@ -81,35 +83,73 @@ textarea,input,select{transition:border-color .25s,box-shadow .25s,background-co
 summary{transition:color .2s}
 summary:hover{color:var(--acc2)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.lnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;justify-content:center}
+.chip{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 12px;border-radius:99px;cursor:pointer}
+.chip.on{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border-color:transparent}
+.lbody p,.lbody li{line-height:1.65}.lbody code{background:var(--code);padding:1px 6px;border-radius:6px;font-size:13px}
+.lbody textarea{min-height:60px;margin-top:6px}
+.note{background:var(--code);border-left:3px solid var(--acc);padding:10px 14px;border-radius:8px;margin:12px 0;font-size:14px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50}
+.modal.on{display:flex}.modal .card{width:min(380px,92vw)}
+.modal input{display:block;width:100%;margin:8px 0;font:inherit;background:var(--code);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">🗄️ SQL Тренажёр</div>
   <nav id="nav">
+    <button data-v="basics">📖 Основы SQL</button>
     <button data-v="practice" class="on">Практика</button>
+    <button data-v="sandbox">🧪 Песочница</button>
     <button data-v="ai">✨ ИИ-конструктор</button>
     <button data-v="learn">Материалы</button>
   </nav>
+  <span class="tag" id="acct" title="Режим доступа">👤 Гость</span>
+  <button class="btn" id="authbtn">Войти</button>
   <button class="btn" id="theme">🌓</button>
 </header>
 <main>
 <section class="view on" id="practice">
   <div class="grid">
+    <div class="side">
+    <div class="card"><h3>Схема БД</h3><div id="schema"></div></div>
     <div class="card"><h3>Задачи</h3><div class="prog"><i id="bar"></i></div><div id="list"></div></div>
+    </div>
     <div class="card">
       <h2 id="tt"></h2><div id="td" style="color:var(--mute)"></div>
       <div class="row" style="margin-bottom:0"><span class="tag" id="tl"></span></div>
       <textarea id="sql" spellcheck="false" placeholder="SELECT ..."></textarea>
       <div class="row">
         <button class="btn p" id="run">▶ Выполнить</button>
-        <button class="btn" id="check">✓ Проверить ответ</button>
         <button class="btn" id="hint">💡 Подсказка</button>
         <button class="btn" id="sol">Решение</button>
       </div>
       <div id="out"></div>
+      <div id="exp"></div>
     </div>
-    <div class="card"><h3>Схема БД</h3><div id="schema"></div></div>
+  </div>
+</section>
+
+<section class="view" id="basics">
+  <div class="lnav" id="lnav"></div>
+  <div class="card lbody" id="lbody" style="max-width:820px;margin:0 auto"></div>
+</section>
+
+<section class="view" id="sandbox">
+  <div class="grid" style="grid-template-columns:290px 1fr">
+    <div class="card"><h3>Таблицы песочницы</h3><div id="sbschema"></div></div>
+    <div class="card">
+      <h2>🧪 Песочница</h2>
+      <div id="sbstate"></div>
+      <textarea id="sbq" spellcheck="false" placeholder="INSERT INTO categories (id, name) VALUES (5, 'Серверы')"></textarea>
+      <div class="row">
+        <button class="btn p" id="sbrun">▶ Выполнить</button>
+        <button class="btn" id="sbreset">↺ Сбросить базу</button>
+      </div>
+      <div style="color:var(--mute);font-size:13px">Гость: только SELECT. С аккаунтом: любые запросы к базе. Один запрос за раз.</div>
+      <div id="sbout"></div>
+    </div>
   </div>
 </section>
 
@@ -128,10 +168,23 @@ summary:hover{color:var(--acc2)}
 
 <section class="view" id="learn">
   <h2>Открытые источники для изучения SQL</h2>
+  <p style="color:var(--mute);margin-top:0">Нажмите на карточку — откроется подробный обзор: что внутри, плюсы и минусы, кому подходит и как заниматься.</p>
   <div class="res-grid" id="links"></div>
 </section>
 </main>
 
+<div id="authpanel" class="modal"><div class="card">
+  <h2>Аккаунт</h2>
+  <div id="authnote" style="color:var(--mute);font-size:13px"></div>
+  <input id="auser" placeholder="Логин (латиница, 3–20 символов)" autocomplete="username">
+  <input id="apass" type="password" placeholder="Пароль (от 6 символов)" autocomplete="current-password">
+  <div class="row"><button class="btn p" id="alogin">Войти</button><button class="btn" id="areg">Создать аккаунт</button><button class="btn" id="authclose">Отмена</button></div>
+  <div id="amsg"></div>
+</div></div>
+<div id="artpanel" class="modal"><div class="card" style="width:min(760px,94vw);max-height:86vh;overflow-y:auto">
+  <div id="artbody" class="lbody"></div>
+  <div class="row"><a class="btn p" id="artlink" href="#" target="_blank" rel="noopener">Перейти на сайт →</a><button class="btn" id="artclose">Закрыть</button></div>
+</div></div>
 <button id="aisettings-btn" title="Настройки ИИ">⚙️</button>
 <div id="aipanel">
   <h3 style="margin-bottom:6px">Настройки ИИ</h3>
@@ -159,6 +212,7 @@ const mk=(c,r)=>r.map(x=>Object.fromEntries(c.map((k,i)=>[k,x[i]])));
 const DB={
  categories:mk(['id','name'],[[1,'Ноутбуки'],[2,'Видеокарты'],[3,'Мониторы'],[4,'Периферия']]),
  products:mk(['id','name','category_id','brand','price','stock'],[[1,'ASUS Vivobook 15',1,'ASUS',65000,12],[2,'Lenovo IdeaPad 3',1,'Lenovo',52000,8],[3,'MacBook Air M2',1,'Apple',120000,5],[4,'GeForce RTX 4060',2,'NVIDIA',38000,15],[5,'Radeon RX 7600',2,'AMD',31000,10],[6,'Dell U2723QE',3,'Dell',55000,6],[7,'LG 27GP850',3,'LG',32000,9],[8,'Logitech MX Master 3S',4,'Logitech',9500,30],[9,'Razer BlackWidow',4,'Razer',11500,0]]),
+ reviews:mk(['id','product_id','author','rating','review_date'],[[1,1,'Иван',5,'2024-02-01'],[2,1,'Мария',4,'2024-02-10'],[3,3,'Олег',5,'2024-02-18'],[4,3,'Анна',5,'2024-03-02'],[5,4,'Иван',4,'2024-03-09'],[6,4,'Пётр',3,'2024-03-15'],[7,6,'Мария',5,'2024-03-22'],[8,8,'Олег',4,'2024-04-01'],[9,8,'Анна',5,'2024-04-07'],[10,5,'Пётр',2,'2024-04-12']]),
  orders:mk(['id','product_id','customer','qty','status','order_date'],[[1,1,'Альфа',2,'paid','2024-01-12'],[2,4,'Бета',1,'paid','2024-01-20'],[3,2,'Гамма',3,'cancelled','2024-02-02'],[4,8,'Дельта',5,'paid','2024-02-15'],[5,3,'Альфа',1,'new','2024-03-01'],[6,4,'Бета',2,'paid','2024-03-10'],[7,6,'Эпсилон',1,'paid','2024-03-18'],[8,1,'Гамма',1,'paid','2024-04-05']])
 };
 for(const t in DB){alasql('CREATE TABLE '+t);alasql.tables[t].data=DB[t].map(r=>({...r}));}
@@ -168,11 +222,20 @@ const tasks=[
  ['Каталог цен','Выведите названия и цены всех товаров.','лёгкий','SELECT name, price FROM products','Выберите два столбца из products.'],
  ['Дорогие товары','Выведите название и цену товаров дороже 50000, от самых дорогих к дешёвым.','лёгкий','SELECT name, price FROM products WHERE price > 50000 ORDER BY price DESC','WHERE фильтрует, ORDER BY ... DESC сортирует.'],
  ['Нет в наличии','Выведите названия товаров, которых нет на складе (stock = 0).','лёгкий','SELECT name FROM products WHERE stock = 0','Сравните столбец stock с нулём.'],
+ ['Хорошие отзывы','Выведите автора и оценку отзывов с оценкой 4 и выше.','лёгкий','SELECT author, rating FROM reviews WHERE rating >= 4','Условие rating >= 4.'],
+ ['Уникальные бренды','Выведите список брендов без повторов, по алфавиту.','лёгкий','SELECT DISTINCT brand FROM products ORDER BY brand','DISTINCT убирает дубликаты.'],
  ['Товары и категории','Выведите название товара и название его категории.','средний','SELECT p.name, c.name AS category FROM products p JOIN categories c ON c.id = p.category_id','Соедините таблицы по p.category_id = c.id.'],
- ['Средняя цена','Для каждой категории выведите название и среднюю цену товаров.','средний','SELECT c.name, AVG(p.price) AS avg_price FROM categories c JOIN products p ON p.category_id = c.id GROUP BY c.name','JOIN + GROUP BY + AVG.'],
- ['Продано штук','Для каждого товара с оплаченными заказами (status = \'paid\') выведите название и общее количество проданных штук.','средний','SELECT p.name, SUM(o.qty) AS sold FROM products p JOIN orders o ON o.product_id = p.id WHERE o.status = \'paid\' GROUP BY p.name','Сначала JOIN и WHERE, затем GROUP BY и SUM.'],
+ ['Оплаченные заказы','Выведите покупателя и название товара для оплаченных заказов (status = \'paid\'), от старых к новым по дате заказа.','средний','SELECT o.customer, p.name FROM orders o JOIN products p ON p.id = o.product_id WHERE o.status = \'paid\' ORDER BY o.order_date','JOIN по o.product_id = p.id, затем WHERE и ORDER BY.'],
+ ['Заказы по статусам','Выведите каждый статус заказа и количество заказов с этим статусом.','средний','SELECT status, COUNT(*) AS cnt FROM orders GROUP BY status','GROUP BY status и COUNT(*).'],
+ ['Отзывы с пятёрками','Выведите название товара и автора отзывов с оценкой 5, по названию товара.','средний','SELECT p.name, r.author FROM reviews r JOIN products p ON p.id = r.product_id WHERE r.rating = 5 ORDER BY p.name','JOIN reviews и products, затем WHERE и ORDER BY.'],
+ ['Отзывы по авторам','Выведите каждого автора отзывов и количество его отзывов.','средний','SELECT author, COUNT(*) AS cnt FROM reviews GROUP BY author','GROUP BY author и COUNT(*).'],
+ ['Средняя цена','Для каждой категории выведите название и среднюю цену товаров.','сложный','SELECT c.name, AVG(p.price) AS avg_price FROM categories c JOIN products p ON p.category_id = c.id GROUP BY c.name','JOIN + GROUP BY + AVG.'],
+ ['Продано штук','Для каждого товара с оплаченными заказами (status = \'paid\') выведите название и общее количество проданных штук.','сложный','SELECT p.name, SUM(o.qty) AS sold FROM products p JOIN orders o ON o.product_id = p.id WHERE o.status = \'paid\' GROUP BY p.name','Сначала JOIN и WHERE, затем GROUP BY и SUM.'],
  ['Большие категории','Выведите названия категорий, в которых больше двух товаров.','сложный','SELECT c.name FROM categories c JOIN products p ON p.category_id = c.id GROUP BY c.name HAVING COUNT(*) > 2','Условие на агрегат пишется в HAVING.'],
- ['Без заказов','Выведите названия товаров, которые ни разу не заказывали.','сложный','SELECT p.name FROM products p LEFT JOIN orders o ON o.product_id = p.id WHERE o.id IS NULL','LEFT JOIN и проверка IS NULL.']
+ ['Без заказов','Выведите названия товаров, которые ни разу не заказывали.','сложный','SELECT p.name FROM products p LEFT JOIN orders o ON o.product_id = p.id WHERE o.id IS NULL','LEFT JOIN и проверка IS NULL.'],
+ ['Рейтинг товаров','Выведите названия товаров со средней оценкой не ниже 4.5 и саму среднюю оценку.','сложный','SELECT p.name, AVG(r.rating) AS avg_rating FROM products p JOIN reviews r ON r.product_id = p.id GROUP BY p.name HAVING AVG(r.rating) >= 4.5','JOIN, GROUP BY и HAVING AVG(...).'],
+ ['Без отзывов','Выведите названия товаров, у которых нет ни одного отзыва.','сложный','SELECT p.name FROM products p LEFT JOIN reviews r ON r.product_id = p.id WHERE r.id IS NULL','LEFT JOIN и IS NULL.'],
+ ['Отзывы по категориям','Для каждой категории выведите название и число отзывов на её товары (категории без отзывов не нужны).','сложный','SELECT c.name, COUNT(*) AS reviews_cnt FROM categories c JOIN products p ON p.category_id = c.id JOIN reviews r ON r.product_id = p.id GROUP BY c.name','Цепочка JOIN: categories → products → reviews, затем GROUP BY.']
 ].map(t=>({title:t[0],desc:t[1],level:t[2],sol:t[3],hint:t[4]}));
 
 let done=new Set(),cur=0;
@@ -198,19 +261,24 @@ function open(i){
   cur=i;const t=tasks[i];
   $('#tt').textContent=t.title;$('#td').textContent=t.desc;$('#tl').textContent=t.level;
   $('#sql').value='';$('#out').innerHTML='';renderList();
+  try{$('#exp').innerHTML='<h3 style="margin-top:22px">Ожидаемый результат</h3>'+table(runSql(t.sol))+(/order\s+by/i.test(t.sol)?'<div style="color:var(--mute);font-size:12px">Порядок строк важен.</div>':'')}catch(e){$('#exp').innerHTML=''}
 }
 $('#list').onclick=e=>{const d=e.target.closest('.task');if(d)open(+d.dataset.i)};
+function compare(mine,t){
+  const ref=runSql(t.sol),ord=/order\s+by/i.test(t.sol);
+  if(JSON.stringify(norm(mine,ord))===JSON.stringify(norm(ref,ord)))return{ok:true};
+  const mc=mine.length?Object.keys(mine[0]).length:0,rc=ref.length?Object.keys(ref[0]).length:0;
+  let why='Значения отличаются от ожидаемых. Проверьте условия'+(ord?' и порядок строк.':'.');
+  if(mine.length!==ref.length)why=`Число строк отличается: у вас ${mine.length}, ожидается ${ref.length}.`;
+  else if(mc!==rc)why=`Число столбцов отличается: у вас ${mc}, ожидается ${rc}.`;
+  return{ok:false,why};
+}
 $('#run').onclick=()=>{
-  try{$('#out').innerHTML=table(runSql($('#sql').value))}
-  catch(e){$('#out').innerHTML=`<div class="msg bad">Ошибка: ${esc(e.message)}</div>`}
-};
-$('#check').onclick=()=>{
   const t=tasks[cur];
   try{
-    const mine=runSql($('#sql').value),ref=runSql(t.sol),ord=/order\s+by/i.test(t.sol);
-    const ok=JSON.stringify(norm(mine,ord))===JSON.stringify(norm(ref,ord));
-    $('#out').innerHTML=table(mine)+`<div class="msg ${ok?'ok':'bad'}">${ok?'✅ Верно! Результат совпал с эталонным.':'❌ Результат отличается от эталонного. Проверьте условия, столбцы и порядок.'}</div>`;
-    if(ok){done.add(t.title);saveDone();renderList()}
+    const mine=runSql($('#sql').value),c=compare(mine,t);
+    $('#out').innerHTML='<h3>Ваш результат</h3>'+table(mine)+`<div class="msg ${c.ok?'ok':'bad'}">${c.ok?'✅ Верно! Ваш результат совпал с ожидаемым.':'❌ Не совпадает с ожидаемым. '+esc(c.why)}</div>`;
+    if(c.ok){done.add(t.title);saveDone();renderList()}
   }catch(e){$('#out').innerHTML=`<div class="msg bad">Ошибка: ${esc(e.message)}</div>`}
 };
 $('#hint').onclick=()=>{$('#out').innerHTML=`<div class="msg info">💡 ${esc(tasks[cur].hint)}</div>`};
@@ -226,19 +294,74 @@ $('#theme').onclick=()=>{
 };
 
 const LINKS=[
- ['SQLBolt','https://sqlbolt.com','Интерактивные уроки с нуля, на английском.'],
- ['SQL Academy','https://sql-academy.org','Бесплатный русскоязычный курс и тренажёр.'],
- ['W3Schools SQL','https://www.w3schools.com/sql/','Справочник по командам с примерами.'],
- ['SQLZoo','https://sqlzoo.net','Классические упражнения с проверкой.'],
- ['Mode SQL Tutorial','https://mode.com/sql-tutorial/','Аналитический SQL: от основ до оконных функций.'],
- ['PostgreSQL Tutorial','https://www.postgresqltutorial.com','Подробные разборы возможностей PostgreSQL.'],
- ['SQL-EX','https://sql-ex.ru','Вдохновение для этого проекта: большой сборник задач.'],
- ['Документация PostgreSQL','https://postgrespro.ru/docs','Официальная документация на русском.']
+ {n:'SQLBolt',u:'https://sqlbolt.com',s:'Интерактивные уроки с нуля, на английском.',f:`
+  <p><b>Что это.</b> Бесплатный интерактивный курс SQL для новичков, работающий прямо в браузере: регистрация и установка не нужны.</p>
+  <p><b>Как устроен.</b> 19 коротких уроков: сначала немного теории, затем интерактивное окно, где вы пишете запрос к встроенной учебной базе и сразу видите результат. Ошибки сопровождаются понятными сообщениями.</p>
+  <p><b>Темы.</b> SELECT и фильтрация WHERE, операторы IN, LIKE, BETWEEN, сортировка ORDER BY и LIMIT, JOIN по нескольким таблицам, агрегаты с GROUP BY и HAVING, изменение данных (INSERT, UPDATE, DELETE), создание таблиц (CREATE, ALTER, DROP).</p>
+  <p><b>Плюсы.</b> Нулевой порог входа, мгновенная проверка, весь курс проходится за один-два вечера. <b>Минусы.</b> Только английский язык; мало задач «на подумать»; нет тем про индексы и проектирование баз; диалект близок к SQLite.</p>
+  <p><b>Как заниматься.</b> Идти по порядку; в каждом уроке сначала менять готовый пример и смотреть, что изменилось, затем решать задачу, не подглядывая в ответ. Пройденную тему полезно сразу повторить в нашем тренажёре.</p>
+  <p><b>Кому подходит.</b> Тем, кто никогда не писал SQL, — идеальная первая ступень.</p>`},
+ {n:'SQL Academy',u:'https://sql-academy.org',s:'Бесплатный русскоязычный курс и тренажёр.',f:`
+  <p><b>Что это.</b> Русскоязычная образовательная платформа по SQL: системный курс плюс тренажёр с автоматической проверкой на настоящей СУБД.</p>
+  <p><b>Как устроено.</b> Модули из коротких уроков: теория с примерами, затем задачи — ваш запрос выполняется на сервере (MySQL), а результат сверяется с эталоном. Есть сохранение прогресса, тесты и рейтинг.</p>
+  <p><b>Темы.</b> От базового SELECT и фильтров до агрегатов и GROUP BY, нескольких видов JOIN, подзапросов, оконных функций и изменения данных. Есть отдельные треки, например для аналитиков данных.</p>
+  <p><b>Цена.</b> Базовая часть курса бесплатна; продвинутые модули и часть задач открываются по подписке. Для сохранения прогресса нужна регистрация.</p>
+  <p><b>Плюсы.</b> Полностью на русском, системная программа, реальная СУБД вместо браузерной имитации, много практики. <b>Минусы.</b> Часть контента платная; привязка к одному диалекту (MySQL).</p>
+  <p><b>Кому подходит.</b> Тем, кто хочет пройти весь путь «с нуля до уверенного уровня» на русском языке и не любит учиться по английским источникам.</p>`},
+ {n:'W3Schools SQL',u:'https://www.w3schools.com/sql/',s:'Справочник по командам с примерами.',f:`
+  <p><b>Что это.</b> Онлайн-справочник по SQL с фирменной кнопкой «Try it Yourself»: почти каждый пример можно запустить и изменить прямо в браузере.</p>
+  <p><b>Что внутри.</b> Отдельные страницы по каждой команде: SELECT, WHERE, операторы сравнения и логики, JOIN, агрегатные и строковые функции, работа с датами, команды DDL (CREATE, ALTER, DROP). Варианты синтаксиса для разных СУБД, квизы для самопроверки.</p>
+  <p><b>Плюсы.</b> Самый быстрый способ вспомнить синтаксис — находится за минуту; примеры короткие и редактируемые. <b>Минусы.</b> Это не курс, а шпаргалка: объяснения краткие, методики обучения нет; платный «сертификат» особой ценности не имеет.</p>
+  <p><b>Как использовать.</b> Держать открытым рядом с тренажёром и подсматривать точный синтаксис команды, когда забыли порядок слов в GROUP BY или формат LIKE. Для самопроверки полезны встроенные квизы.</p>
+  <p><b>Кому подходит.</b> Всем: от новичка до практика — как настольный справочник.</p>`},
+ {n:'SQLZoo',u:'https://sqlzoo.net',s:'Классические упражнения с проверкой.',f:`
+  <p><b>Что это.</b> Один из старейших бесплатных тренажёров SQL: сотни задач с автопроверкой на нескольких «живых» наборах данных — страны мира, нобелевские лауреаты, фильмы, транспортные маршруты.</p>
+  <p><b>Как устроен.</b> Уроки идут ступенями от простого SELECT к JOIN, агрегатам и подзапросам; под каждым шагом — серия задач. Диалект можно переключать: MySQL, PostgreSQL, Oracle, SQL Server.</p>
+  <p><b>Плюсы.</b> Огромный объём практики, полностью бесплатно, разнообразные данные вместо одной скучной таблицы. <b>Минусы.</b> Старомодный интерфейс; проверка иногда требует точного совпадения формата ответа — порядка столбцов, имён колонок, округления.</p>
+  <p><b>Совет.</b> Если верный по смыслу ответ «не принимается», сверьте имена столбцов и их порядок с образцом в условии — чаще всего дело в этом.</p>
+  <p><b>Кому подходит.</b> Тем, кто уже прошёл первый курс и хочет набить руку на большом количестве задач разной сложности.</p>`},
+ {n:'Mode SQL Tutorial',u:'https://mode.com/sql-tutorial/',s:'Аналитический SQL: от основ до оконных функций.',f:`
+  <p><b>Что это.</b> Англоязычный курс от аналитической платформы Mode: SQL подаётся как рабочий инструмент аналитика данных, а не абстрактный язык.</p>
+  <p><b>Уровни.</b> Basic — SELECT, WHERE, агрегаты, JOIN. Intermediate — подзапросы, UNION, условная логика CASE. Advanced — оконные функции, работа с датами и строками, сводные таблицы. Отдельный раздел посвящён аналитическому мышлению: как из вопроса бизнеса получить запрос.</p>
+  <p><b>Практика.</b> Запросы выполняются в браузере на PostgreSQL с данными, похожими на реальные стартапные: компании, раунды инвестиций, показатели. Для запуска примеров может понадобиться бесплатная учётная запись Mode.</p>
+  <p><b>Плюсы.</b> Современная подача, упор на задачи из аналитики, диалект PostgreSQL — один из самых востребованных. <b>Минусы.</b> Только английский; часть интерактива зависит от аккаунта.</p>
+  <p><b>Кому подходит.</b> Тем, кто учит SQL ради аналитики данных, BI или отчётности.</p>`},
+ {n:'PostgreSQL Tutorial',u:'https://www.postgresqltutorial.com',s:'Подробные разборы возможностей PostgreSQL.',f:`
+  <p><b>Что это.</b> Большой структурированный учебный сайт, целиком посвящённый PostgreSQL — от установки до внутренних механизмов.</p>
+  <p><b>Что внутри.</b> Установка и инструменты (psql, pgAdmin), типы данных, все виды запросов, JOIN, подзапросы, CTE, оконные функции, транзакции, ограничения целостности, индексы, представления, триггеры, хранимые функции, импорт и экспорт данных, советы по производительности.</p>
+  <p><b>Формат.</b> Статьи с пошаговыми примерами и диаграммами; предполагается, что вы повторяете запросы в собственной установке PostgreSQL.</p>
+  <p><b>Плюсы.</b> Глубина и аккуратность изложения, охватывает даже администрирование. <b>Минусы.</b> Английский язык; нужно ставить PostgreSQL локально; интерактива почти нет.</p>
+  <p><b>Кому подходит.</b> Тем, кто выбрал PostgreSQL основной СУБД и хочет разобраться в ней глубоко и «по книге».</p>`},
+ {n:'SQL-EX',u:'https://sql-ex.ru',s:'Вдохновение для этого проекта: большой сборник задач.',f:`
+  <p><b>Что это.</b> Легендарный русскоязычный задачник по SQL, существующий с начала 2000-х. Именно им вдохновлён наш тренажёр. Десятки задач на нескольких учебных схемах: компьютерная техника, корабли, авиарейсы, склад красок.</p>
+  <p><b>Как устроен.</b> Задачи разбиты по стадиям сложности. Решение проверяется на двух наборах данных — видимом и скрытом, поэтому «подогнать» ответ под пример не выйдет: запрос обязан быть правильным в общем случае. Есть рейтинг, уровни и сертификация.</p>
+  <p><b>Плюсы.</b> Лучшая «прокачка» до автоматизма; строгая проверка учит писать точно и читать условие до конца. <b>Минусы.</b> Формулировки требуют внимательности; новичку поначалу тяжело; часть функций доступна после регистрации.</p>
+  <p><b>Как заниматься.</b> Решать по две-три задачи в день; после сдачи обязательно разбирать чужие решения — они открываются после вашего правильного ответа.</p>
+  <p><b>Кому подходит.</b> Всем, кто освоил базу, — это главный «спортзал» по SQL на русском языке.</p>`},
+ {n:'Документация PostgreSQL',u:'https://postgrespro.ru/docs',s:'Официальная документация на русском.',f:`
+  <p><b>Что это.</b> Официальный перевод документации PostgreSQL на русский язык от компании Postgres Professional — первоисточник по этой СУБД.</p>
+  <p><b>Что внутри.</b> Полное описание синтаксиса каждой команды, все типы данных и встроенные функции, настройка сервера, репликация, оптимизация запросов через EXPLAIN, внутреннее устройство базы.</p>
+  <p><b>Формат.</b> Это справочник, а не курс: его не читают «от корки до корки», а открывают конкретную главу по мере надобности — например, точное поведение ON CONFLICT или параметры CREATE INDEX.</p>
+  <p><b>Плюсы.</b> Абсолютная точность и полнота, русский язык, поддержка актуальных версий. <b>Минусы.</b> Сухой академический стиль; новичку без контекста читается тяжело.</p>
+  <p><b>Кому подходит.</b> Разработчикам и администраторам, которые работают с PostgreSQL каждый день, — как «словарь» и «энциклопедия» рядом с курсами и задачниками.</p>`}
 ];
-$('#links').innerHTML=LINKS.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener"><b>${l[0]}</b><span>${l[2]}</span></a>`).join('');
+$('#links').innerHTML=LINKS.map((l,i)=>`<a href="${l.u}" data-i="${i}" rel="noopener"><b>${l.n}</b><span>${l.s}</span></a>`).join('');
+$('#links').onclick=e=>{
+  const a=e.target.closest('a[data-i]');if(!a)return;
+  e.preventDefault();const l=LINKS[+a.dataset.i];
+  $('#artbody').innerHTML=`<h2>${l.n}</h2>`+l.f;
+  $('#artlink').href=l.u;
+  $('#artpanel').classList.add('on');
+};
+$('#artclose').onclick=()=>$('#artpanel').classList.remove('on');
+$('#artpanel').onclick=e=>{if(e.target.id==='artpanel')$('#artpanel').classList.remove('on')};
 
+const LV={
+'лёгкий':'ЛЁГКИЙ: только одна таблица, без JOIN, без GROUP BY, без подзапросов. Допустимо: SELECT нескольких столбцов, одно простое условие WHERE, при желании ORDER BY или простой COUNT(*) по всей таблице.',
+'средний':'СРЕДНИЙ: максимум две таблицы. Допустимо ЛИБО один JOIN двух таблиц с WHERE и/или ORDER BY (без группировки), ЛИБО GROUP BY по одной таблице с одной агрегатной функцией. ЗАПРЕЩЕНО: сочетать JOIN с GROUP BY, HAVING, LEFT JOIN, подзапросы, три и более таблицы.',
+'сложный':'СЛОЖНЫЙ: можно несколько JOIN, LEFT JOIN, GROUP BY с HAVING, JOIN вместе с агрегатами, подзапросы.'};
+const ALIAS_RULE='Псевдонимы столбцов (AS) только латиницей в snake_case и НЕ зарезервированные слова SQL: нельзя total, count, sum, value, key, order, date; используй total_sum, cnt, order_cnt и т.п. Решение должно возвращать непустой результат.';
 let sample=null;
-(async()=>{try{sample=await claude.use('sample')}catch(e){}if(!sample)$('#aimsg').innerHTML='<div class="msg info">Конструктор работает без Claude: задание придумывает бесплатный онлайн-ИИ, при его недоступности — локальный генератор. Для лучшего качества укажите свой ключ в ⚙️ в углу экрана.</div>'})();
 
 // Настройки ИИ: сюда можно встроить свой ключ, свои настройки хранятся в браузере
 const BUILTIN_KEY=''; // например: const BUILTIN_KEY='ваш_ключ_Gemini';
@@ -265,21 +388,29 @@ const TPL=[
  {lv:'лёгкий',kw:['in','статус','заказ'],title:'Активные заказы',description:'Выведите id, клиента, количество и дату заказов со статусом paid или new.',solution:"SELECT id, customer, qty, order_date FROM orders WHERE status IN ('paid','new')",hint:'WHERE status IN (...).'},
  {lv:'лёгкий',kw:['дат','месяц','март'],title:'Заказы за март',description:'Выведите id, клиента, количество и статус заказов, сделанных в марте 2024 года.',solution:"SELECT id, customer, qty, status FROM orders WHERE order_date LIKE '2024-03%'",hint:"Даты — строки, поэтому подойдёт LIKE '2024-03%'."},
  {lv:'лёгкий',kw:['distinct','уникальн','бренд'],title:'Уникальные бренды',description:'Выведите список уникальных брендов товаров по алфавиту.',solution:'SELECT DISTINCT brand FROM products ORDER BY brand',hint:'DISTINCT убирает дубликаты.'},
- {lv:'средний',kw:['join','соедин'],title:'Товары с категориями',description:'Выведите название товара и название его категории.',solution:'SELECT p.name, c.name AS category FROM products p JOIN categories c ON c.id = p.category_id',hint:'Соедините таблицы по p.category_id = c.id.'},
- {lv:'средний',kw:['left'],title:'Все категории и их товары',description:'Выведите все категории и названия их товаров, отсортируйте по названию категории.',solution:'SELECT c.name, p.name AS product FROM categories c LEFT JOIN products p ON p.category_id = c.id ORDER BY c.name',hint:'LEFT JOIN сохраняет категории, даже если в них нет товаров.'},
- {lv:'средний',kw:['группир','group','количеств','count'],title:'Товаров в категории',description:'Для каждой категории выведите название и количество товаров в ней.',solution:'SELECT c.name, COUNT(p.id) AS cnt FROM categories c LEFT JOIN products p ON p.category_id = c.id GROUP BY c.name',hint:'LEFT JOIN + GROUP BY + COUNT.'},
+ {lv:'средний',kw:['join','соедин','джо'],title:'Товары с категориями',description:'Выведите название товара и название его категории.',solution:'SELECT p.name, c.name AS category FROM products p JOIN categories c ON c.id = p.category_id',hint:'Соедините таблицы по p.category_id = c.id.'},
+ {lv:'средний',kw:['оплач','paid'],title:'Оплаченные заказы',description:'Выведите покупателя и название товара для оплаченных заказов (status = \'paid\'), от старых к новым по дате заказа.',solution:"SELECT o.customer, p.name FROM orders o JOIN products p ON p.id = o.product_id WHERE o.status = 'paid' ORDER BY o.order_date",hint:'JOIN, затем WHERE и ORDER BY.'},
+ {lv:'средний',kw:['статус','status'],title:'Заказы по статусам',description:'Выведите каждый статус заказа и количество заказов с этим статусом.',solution:'SELECT status, COUNT(*) AS cnt FROM orders GROUP BY status',hint:'GROUP BY status и COUNT(*).'},
+ {lv:'сложный',kw:['left'],title:'Все категории и их товары',description:'Выведите все категории и названия их товаров, отсортируйте по названию категории.',solution:'SELECT c.name, p.name AS product FROM categories c LEFT JOIN products p ON p.category_id = c.id ORDER BY c.name',hint:'LEFT JOIN сохраняет категории, даже если в них нет товаров.'},
+ {lv:'сложный',kw:['группир','group','количеств','count'],title:'Товаров в категории',description:'Для каждой категории выведите название и количество товаров в ней.',solution:'SELECT c.name, COUNT(p.id) AS cnt FROM categories c LEFT JOIN products p ON p.category_id = c.id GROUP BY c.name',hint:'LEFT JOIN + GROUP BY + COUNT.'},
  {lv:'средний',kw:['средн','avg'],title:'Средняя цена брендов',description:'Для каждого бренда выведите среднюю цену его товаров.',solution:'SELECT brand, AVG(price) AS avg_price FROM products GROUP BY brand',hint:'GROUP BY brand + AVG(price).'},
- {lv:'средний',kw:['макс','max','дорог'],title:'Максимум в категории',description:'Для каждой категории выведите название и цену самого дорогого товара в ней.',solution:'SELECT c.name, MAX(p.price) AS max_price FROM categories c JOIN products p ON p.category_id = c.id GROUP BY c.name',hint:'GROUP BY + MAX(price).'},
+ {lv:'сложный',kw:['макс','max','дорог'],title:'Максимум в категории',description:'Для каждой категории выведите название и цену самого дорогого товара в ней.',solution:'SELECT c.name, MAX(p.price) AS max_price FROM categories c JOIN products p ON p.category_id = c.id GROUP BY c.name',hint:'GROUP BY + MAX(price).'},
  {lv:'сложный',kw:['сумм','sum','выручк','продаж'],title:'Выручка по товарам',description:'Для каждого товара посчитайте выручку от оплаченных заказов (количество × цена). Выведите название товара и выручку.',solution:"SELECT p.name, SUM(o.qty * p.price) AS revenue FROM products p JOIN orders o ON o.product_id = p.id WHERE o.status = 'paid' GROUP BY p.name",hint:"JOIN, WHERE status = 'paid', затем SUM(o.qty * p.price)."},
  {lv:'сложный',kw:['having'],title:'Категории с большим запасом',description:'Выведите названия категорий, где суммарный запас товаров на складе больше 20, и этот запас.',solution:'SELECT c.name, SUM(p.stock) AS total_stock FROM categories c JOIN products p ON p.category_id = c.id GROUP BY c.name HAVING SUM(p.stock) > 20',hint:'Условие на агрегат пишется в HAVING.'},
  {lv:'сложный',kw:['подзапрос','выше средн'],title:'Дороже среднего',description:'Выведите название и цену товаров, цена которых выше средней цены по всем товарам, от дорогих к дешёвым.',solution:'SELECT name, price FROM products WHERE price > (SELECT AVG(price) FROM products) ORDER BY price DESC',hint:'Подзапрос SELECT AVG(price) FROM products в WHERE.'},
  {lv:'сложный',kw:['case','сегмент'],title:'Ценовые сегменты',description:'Разделите товары на сегменты: до 20000 — «бюджет», до 60000 — «средний», остальное — «премиум». Выведите название, цену и сегмент по убыванию цены.',solution:"SELECT name, price, CASE WHEN price < 20000 THEN 'бюджет' WHEN price < 60000 THEN 'средний' ELSE 'премиум' END AS segment FROM products ORDER BY price DESC",hint:'CASE WHEN ... THEN ... ELSE ... END.'}
 ];
 function localTask(q,lv){
-  const s=q.toLowerCase();
+  const s=q.toLowerCase().replace(/ё/g,'е');
   let pool=TPL.filter(t=>t.lv===lv);if(!pool.length)pool=TPL;
-  const hit=pool.find(t=>t.kw.some(k=>s.includes(k)))||TPL.find(t=>t.kw.some(k=>s.includes(k)));
-  const t=hit||pool[Math.floor(Math.random()*pool.length)];
+  // Нечёткое совпадение (для ключей от 4 букв): слово с опечаткой считается совпавшим с ключевым словом
+  const words=s.split(/[^a-zа-я0-9]+/).filter(w=>w.length>2);
+  const match=k=>s.includes(k)||(k.length>3&&words.some(w=>{const t=w.length>k.length+2?w.slice(0,k.length):w;return Math.abs(t.length-k.length)<=2&&lev(t,k)<=(k.length>5?2:1)}));
+  const hit=pool.find(t=>t.kw.some(match))||TPL.find(t=>t.kw.some(match));
+  // Общие слова по теме сайта: запрос по теме, но без конкретной темы задания — выдаём случайное задание уровня
+  const GEN=['sql','скю','баз','данн','таблиц','запрос','задан','трен','учеб','изуч','вучен','курс','урок','select','селект','столбц','колонк'];
+  const t=hit||(GEN.some(match)?pool[Math.floor(Math.random()*pool.length)]:null);
+  if(!t)return null;
   let title=t.title,n=2;while(tasks.some(x=>x.title.trim()===title))title=`${t.title} №${n++}`;
   return{title,description:t.description,solution:t.solution,hint:t.hint};
 }
@@ -321,25 +452,33 @@ async function callLLM(prompt){
   }finally{clearTimeout(tm)}
 }
 
+// Локально отсеиваем только явный мусор; тематичность (с учётом опечаток) определяет ИИ, а без него — нечёткий поиск по шаблонам
+const isJunk=q=>q.length<3||!/[a-zа-яё]/i.test(q)||/^(.)\1{3,}$/.test(q.replace(/\s+/g,''));
+// Расстояние Левенштейна — распознаёт слова с опечатками
+const lev=(a,b)=>{const d=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=d[0];d[0]=i;for(let j=1;j<=b.length;j++){const t=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,p+(a[i-1]!==b[j-1]));p=t}}return d[b.length]};
 $('#aigo').onclick=async()=>{
   const q=$('#aiq').value.trim(),m=$('#aimsg'),lv=$('#ailv').value;
   if(!q){m.innerHTML='<div class="msg bad">Опишите, какое задание вы хотите.</div>';return}
+  if(isJunk(q)){m.innerHTML='<div class="msg bad">Похоже на случайный набор символов. Напишите, что хотите потренировать — можно с опечатками, главное, чтобы это касалось SQL или данных учебного магазина.</div>';return}
   $('#aigo').disabled=true;
   const schema=Object.entries(DB).map(([t,r])=>`${t}(${Object.keys(r[0]).join(', ')})`).join('\n');
   const data=Object.entries(DB).map(([t,r])=>`${t}: ${JSON.stringify(r)}`).join('\n');
-  const prompt=`Ты составляешь задания для SQL-тренажёра. Таблицы:\n${schema}\nstatus в orders: paid, new, cancelled. Даты - строки формата YYYY-MM-DD.\nДанные таблиц:\n${data}\nЗапрос ученика: "${q}"\nСложность: ${lv}.\nТаблицы - магазин компьютерной техники. Составь ОДНО осмысленное задание на русском строго по этим таблицам: условие должно быть конкретным и однозначно проверяемым по результату запроса. Решение - один запрос SELECT в диалекте AlaSQL (без оконных функций, без CTE, без ILIKE), который на этих данных возвращает НЕПУСТОЙ результат - проверь это по данным выше. Если порядок строк не важен, не используй ORDER BY.\nВерни только JSON: {"title":"короткое название","description":"условие задачи","solution":"SQL","hint":"подсказка без готового ответа"}`;
-  let j=null,local=false,err='';
-  for(let att=1;att<=3&&!j;att++){
+  const prompt=`Ты составляешь задания для SQL-тренажёра. Таблицы:\n${schema}\nstatus в orders: paid, new, cancelled. Даты - строки формата YYYY-MM-DD.\nДанные таблиц:\n${data}\nЗапрос ученика: "${q}"\nОпечатки и грамматические ошибки игнорируй: если по смыслу запрос про SQL, базы данных или эти таблицы - составь задание. Если запрос совсем не по теме сайта (бессмыслица, спам, посторонняя тема) - верни только JSON {"error":"короткое объяснение, почему запрос не по теме"}.\nСложность: ${lv}. Строго соблюдай уровень.\n${LV[lv]} ${ALIAS_RULE}\nТаблицы - магазин компьютерной техники. Составь ОДНО осмысленное задание на русском строго по этим таблицам: условие должно быть конкретным и однозначно проверяемым по результату запроса. Решение - один запрос SELECT в диалекте AlaSQL (без оконных функций, без CTE, без ILIKE), который на этих данных возвращает НЕПУСТОЙ результат - проверь это по данным выше. Если порядок строк не важен, не используй ORDER BY.\nВерни только JSON: {"title":"короткое название","description":"условие задачи","solution":"SQL","hint":"подсказка без готового ответа"}`;
+  let j=null,local=false,err='',refused='';
+  for(let att=1;att<=3&&!j&&!refused;att++){
     m.innerHTML=`<div class="msg info">ИИ придумывает задание… (попытка ${att}/3)</div>`;
     try{
       const cand=await callLLM(err?prompt+`\nПредыдущий твой ответ не прошёл проверку: ${err}. Исправься и верни корректный JSON.`:prompt);
+      if(cand&&cand.error){refused=String(cand.error);break}
       if(!cand||!cand.solution||!cand.title)throw new Error('неполный JSON: нужны поля title, description, solution, hint');
       cand.solution=String(cand.solution).replace(/```(?:sql)?/gi,'').trim();
       if(!runSql(cand.solution).length)throw new Error('запрос solution вернул пустой результат');
       j=cand;
     }catch(e){err=e.message||String(e)}
   }
+  if(refused){m.innerHTML=`<div class="msg bad">Запрос не по теме сайта: ${esc(refused)} Опишите, что потренировать в SQL — можно своими словами и с опечатками.</div>`;$('#aigo').disabled=false;return}
   if(!j){j=localTask(q,lv);local=true}
+  if(!j){m.innerHTML='<div class="msg bad">Запрос не по теме сайта (SQL и учебная база магазина), а ИИ сейчас недоступен. Попробуйте переформулировать или проверьте настройки ИИ (⚙️ в углу экрана).</div>';$('#aigo').disabled=false;return}
   try{
     let title=String(j.title).trim(),n=2;const t0=title;
     while(tasks.some(x=>x.title.trim()===title))title=`${t0} №${n++}`;
@@ -350,6 +489,155 @@ $('#aigo').onclick=async()=>{
   }catch(e){m.innerHTML=`<div class="msg bad">Не удалось создать задание: ${esc(e.message||'попробуйте ещё раз')}</div>`}
   $('#aigo').disabled=false;
 };
+const LESSONS=[
+{t:'Таблицы',h:`<p><b>База данных</b> — это набор связанных <b>таблиц</b>. Таблица похожа на лист Excel: <b>столбцы</b> задают, какие данные хранятся (название, цена), а каждая <b>строка</b> — одна запись (один товар).</p>
+<p>В нашей учебной базе три таблицы: <code>categories</code> (категории), <code>products</code> (товары) и <code>orders</code> (заказы). Их схема всегда видна на вкладке «Практика».</p>
+<p><b>SQL</b> — язык запросов: вы описываете, какие данные нужны, а база сама находит их. Попробуйте первый запрос — он показывает все данные таблицы <code>products</code>.</p>`,ex:['SELECT * FROM products']},
+{t:'SELECT',h:`<p><code>SELECT</code> выбирает столбцы, <code>FROM</code> указывает таблицу. Звёздочка <code>*</code> значит «все столбцы». Нужные столбцы перечисляют через запятую.</p>
+<p>Через <code>AS</code> столбцу можно дать другое имя (псевдоним) — удобно в результатах и вычислениях.</p>
+<div class="note">Запросы можно менять прямо в окне примеров — экспериментируйте!</div>`,ex:['SELECT name, price FROM products','SELECT name AS product_name, price * 2 AS double_price FROM products']},
+{t:'WHERE',h:`<p><code>WHERE</code> оставляет только строки, которые подходят под условие. Сравнения: <code>=</code>, <code>&lt;&gt;</code> (не равно), <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code>.</p>
+<p>Условия объединяют через <code>AND</code> (оба верны) и <code>OR</code> (хотя бы одно). <code>IN</code> проверяет список значений, <code>LIKE</code> ищет по шаблону: <code>%</code> — любые символы.</p>
+<p>Текст в запросах пишется в одинарных кавычках.</p>`,ex:['SELECT name, price FROM products WHERE price < 40000 AND stock > 0',"SELECT name, brand FROM products WHERE brand IN ('ASUS', 'Dell')","SELECT name FROM products WHERE name LIKE 'Lenovo%'"]},
+{t:'ORDER BY и LIMIT',h:`<p><code>ORDER BY</code> сортирует результат: по умолчанию по возрастанию (<code>ASC</code>), для убывания добавьте <code>DESC</code>. Можно сортировать по нескольким столбцам через запятую.</p>
+<p><code>LIMIT</code> ограничивает число строк. Вместе они отвечают на вопросы вроде «три самых дорогих товара».</p>
+<div class="note">Порядок написания всегда такой: SELECT → FROM → WHERE → ORDER BY → LIMIT.</div>`,ex:['SELECT name, price FROM products ORDER BY price DESC LIMIT 3','SELECT name, brand, price FROM products ORDER BY brand ASC, price DESC']},
+{t:'Агрегаты',h:`<p>Агрегатные функции сворачивают много строк в одно значение: <code>COUNT</code> — количество, <code>SUM</code> — сумма, <code>AVG</code> — среднее, <code>MIN</code> и <code>MAX</code> — наименьшее и наибольшее.</p>
+<p><code>COUNT(*)</code> считает все строки. Функции можно комбинировать с <code>WHERE</code>: сначала отбираются строки, потом считается итог.</p>`,ex:['SELECT COUNT(*) AS cnt, MIN(price) AS min_price, MAX(price) AS max_price, AVG(price) AS avg_price FROM products',"SELECT SUM(qty) AS paid_qty FROM orders WHERE status = 'paid'"]},
+{t:'GROUP BY и HAVING',h:`<p><code>GROUP BY</code> делит строки на группы и считает агрегаты для каждой группы отдельно: например, сколько заказов в каждом статусе.</p>
+<p><code>WHERE</code> фильтрует строки <i>до</i> группировки, а <code>HAVING</code> — группы <i>после</i> неё (по результату агрегата).</p>
+<div class="note">Правило: в SELECT можно писать либо столбцы из GROUP BY, либо агрегатные функции.</div>`,ex:['SELECT status, COUNT(*) AS cnt FROM orders GROUP BY status','SELECT customer, SUM(qty) AS qty_sum FROM orders GROUP BY customer HAVING SUM(qty) > 2']},
+{t:'Связи таблиц',h:`<p>Чтобы не дублировать данные, информацию делят на таблицы и связывают их. Название категории хранится один раз в <code>categories</code>, а у каждого товара в <code>products</code> лежит только номер категории.</p>
+<ul><li><b>Первичный ключ (PRIMARY KEY)</b> — уникальный номер строки, обычно <code>id</code>.</li>
+<li><b>Внешний ключ (FOREIGN KEY)</b> — столбец, который ссылается на первичный ключ другой таблицы. Здесь <code>products.category_id</code> → <code>categories.id</code>, а <code>orders.product_id</code> и <code>reviews.product_id</code> → <code>products.id</code>.</li></ul>
+<p><b>Виды связей:</b> «один ко многим» (в одной категории много товаров — самая частая), «один к одному» и «многие ко многим» (например, студенты и курсы; для неё создают промежуточную таблицу).</p>
+<p>Сравните два запроса: номер категории в товарах и сами категории.</p>`,ex:['SELECT id, name, category_id FROM products','SELECT * FROM categories']},
+{t:'JOIN',h:`<p><code>JOIN</code> соединяет строки двух таблиц по условию связи: <code>ON c.id = p.category_id</code>. Таблицам удобно давать короткие псевдонимы (<code>p</code>, <code>c</code>), а столбцы писать как <code>p.name</code>.</p>
+<p><b>INNER JOIN</b> (просто <code>JOIN</code>) оставляет только пары, нашедшие друг друга. <b>LEFT JOIN</b> сохраняет все строки левой таблицы, а если пары нет, подставляет <code>NULL</code>. Так можно найти товары без заказов: <code>WHERE o.id IS NULL</code>.</p>
+<p>Теперь вы знаете достаточно, чтобы решать задачи на вкладке «Практика»!</p>`,ex:['SELECT p.name, c.name AS category FROM products p JOIN categories c ON c.id = p.category_id','SELECT p.name, o.id AS order_id FROM products p LEFT JOIN orders o ON o.product_id = p.id']}
+];
+let li=0;
+function showLesson(i){
+  li=i;const L=LESSONS[i];
+  $('#lnav').innerHTML=LESSONS.map((x,k)=>`<button class="chip ${k===i?'on':''}" data-k="${k}">${k+1}. ${esc(x.t)}</button>`).join('');
+  $('#lbody').innerHTML=`<h2>${i+1}. ${esc(L.t)}</h2>${L.h}`+L.ex.map((q,k)=>`<textarea class="exq" data-k="${k}" rows="2" spellcheck="false">${esc(q)}</textarea><div class="row"><button class="btn p" data-ex="${k}">▶ Запустить</button></div><div id="exo${k}"></div>`).join('')+`<div class="row" style="justify-content:space-between;margin-top:20px"><button class="btn" id="lprev" ${i?'':'disabled'}>← Назад</button><button class="btn p" id="lnext">${i<LESSONS.length-1?'Далее →':'К практике →'}</button></div>`;
+  window.scrollTo({top:0});
+}
+$('#lnav').onclick=e=>{const b=e.target.closest('.chip');if(b)showLesson(+b.dataset.k)};
+$('#lbody').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.ex!==undefined){
+    const k=b.dataset.ex,o=$('#exo'+k);
+    try{o.innerHTML=table(runSql(document.querySelector(`.exq[data-k="${k}"]`).value))}
+    catch(err){o.innerHTML=`<div class="msg bad">Ошибка: ${esc(err.message)}</div>`}
+  }else if(b.id==='lprev')showLesson(li-1);
+  else if(b.id==='lnext'){if(li<LESSONS.length-1)showLesson(li+1);else document.querySelector('[data-v=practice]').click()}
+};
+// ---------- Аккаунты (локально, в браузере) и песочница ----------
+let sb=null,sbLog=[],canEdit=false,acctName='';
+function initSb(log){
+  sb=new alasql.Database('sbx'+Date.now());
+  for(const t in DB){sb.exec('CREATE TABLE '+t);sb.tables[t].data=DB[t].map(r=>({...r}));}
+  for(const q of log){try{sb.exec(q)}catch(e){}}
+}
+function renderSb(){
+  $('#acct').textContent=canEdit?'✅ '+acctName:'👤 Гость';
+  $('#authbtn').textContent=canEdit?'Выйти':'Войти';
+  $('#sbstate').innerHTML=canEdit
+    ?`<div class="msg ok">Вы вошли в аккаунт: можно выполнять любые запросы к базе. Изменения сохраняются ${onHttp?'на сервере — они доступны с любого компьютера':'в вашей личной копии (в этом браузере)'}.</div>`
+    :'<div class="msg info">Гостевой режим: можно только читать данные (SELECT). Чтобы изменять базу, нажмите «Войти» в шапке и создайте аккаунт.</div>';
+  $('#sbreset').disabled=!canEdit;
+  $('#sbschema').innerHTML=Object.keys(sb.tables).map(t=>{
+    const T=sb.tables[t],cols=(T.columns&&T.columns.length)?T.columns.map(c=>c.columnid):Object.keys(T.data[0]||{});
+    return `<div class="tbl"><b>${esc(t)}</b> <span class="tag">${T.data.length} стр.</span><div>${esc(cols.join(', '))}</div></div>`}).join('');
+}
+function saveSb(){
+  if(!canEdit)return;
+  if(onHttp&&sessHash){api('/api/sandbox',{u:acctName,h:sessHash,log:sbLog.slice(-300)}).catch(()=>{$('#sbout').insertAdjacentHTML('beforeend','<div class="msg bad">Не удалось сохранить изменения на сервере.</div>')});return}
+  try{localStorage.setItem('sqlt-sb-'+acctName,JSON.stringify(sbLog.slice(-300)))}catch(e){$('#sbout').insertAdjacentHTML('beforeend','<div class="msg bad">Не удалось сохранить изменения в браузере.</div>')}
+}
+$('#sbrun').onclick=()=>{
+  const q=$('#sbq').value.replace(/;\s*$/,''),o=$('#sbout');
+  try{
+    if(!q.trim())throw new Error('Введите запрос.');
+    const isSel=/^\s*select\b/i.test(q);
+    if(!canEdit&&!isSel)throw new Error('Гостевой режим: доступны только запросы SELECT. Войдите в аккаунт, чтобы делать с базой что угодно.');
+    if(q.length>2000)throw new Error('Слишком длинный запрос.');
+    const r=sb.exec(q);
+    if(isSel){o.innerHTML=table(r)}
+    else{sbLog.push(q);o.innerHTML='<div class="msg ok">✅ Запрос выполнен.</div>';renderSb();saveSb()}
+  }catch(e){o.innerHTML=`<div class="msg bad">Ошибка: ${esc(e.message)}</div>`}
+};
+$('#sbreset').onclick=()=>{
+  if(!canEdit)return;
+  sbLog=[];initSb([]);renderSb();saveSb();$('#sbout').innerHTML='<div class="msg info">База сброшена к исходному состоянию.</div>';
+};
+const getUsers=()=>{try{return JSON.parse(localStorage.getItem('sqlt-users')||'{}')}catch(e){return{}}};
+// При работе через сервер аккаунты общие (users.json на сервере) — вход с любого компьютера
+const onHttp=location.protocol.startsWith('http');
+let sessHash='';
+async function api(path,body){
+  const r=await fetch(path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined);
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||'Ошибка сервера ('+r.status+')');
+  return d;
+}
+$('#authnote').textContent=onHttp?'Аккаунты хранятся на сервере: войти в свой аккаунт можно с любого компьютера сети. Это учебная защита, а не настоящая безопасность.':'Сайт открыт без сервера: аккаунты хранятся только в этом браузере.';
+async function hashPw(pw,salt){
+  if(!(window.crypto&&crypto.subtle))throw new Error('Для аккаунтов нужен защищённый контекст: откройте сайт через localhost (server.ps1) или https.');
+  const enc=new TextEncoder(),k=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveBits']);
+  const b=await crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:100000,hash:'SHA-256'},k,256);
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+const authMsg=(t,c)=>{$('#amsg').innerHTML=`<div class="msg ${c}">${esc(t)}</div>`};
+async function loadSession(){
+  let raw=null;try{raw=localStorage.getItem('sqlt-session')}catch(e){}
+  let u='',h='';
+  if(raw){try{const o=JSON.parse(raw);if(o&&typeof o==='object'&&o.u){u=o.u;h=o.h||''}else u=String(o)}catch(e){u=raw}}
+  if(u&&h&&onHttp){
+    try{
+      const d=await api('/api/sandbox?u='+encodeURIComponent(u)+'&h='+encodeURIComponent(h));
+      canEdit=true;acctName=u;sessHash=h;
+      sbLog=[].concat(d.log||[]).filter(x=>typeof x==='string');
+      initSb(sbLog);renderSb();return;
+    }catch(e){try{localStorage.removeItem('sqlt-session')}catch(_){}}
+  }
+  if(u&&getUsers()[u]){
+    canEdit=true;acctName=u;sessHash='';
+    try{sbLog=JSON.parse(localStorage.getItem('sqlt-sb-'+u)||'[]').filter(x=>typeof x==='string')}catch(e){sbLog=[]}
+  }else{canEdit=false;acctName='';sessHash='';sbLog=[]}
+  initSb(sbLog);renderSb();
+}
+async function doAuth(reg){
+  const u=$('#auser').value.trim().toLowerCase(),p=$('#apass').value;
+  if(!/^[a-z0-9_.-]{3,20}$/.test(u))return authMsg('Логин: 3–20 символов, латиница, цифры, _ . -','bad');
+  if(p.length<6)return authMsg('Пароль не короче 6 символов.','bad');
+  try{
+    if(onHttp){
+      const d=await api('/api/auth',{op:reg?'reg':'login',u,p});
+      localStorage.setItem('sqlt-session',JSON.stringify({u,h:d.h}));
+      $('#apass').value='';$('#amsg').innerHTML='';$('#authpanel').classList.remove('on');loadSession();return;
+    }
+    const us=getUsers();
+    if(reg){
+      if(us[u])return authMsg('Такой логин уже занят.','bad');
+      const salt=[...crypto.getRandomValues(new Uint32Array(4))].join('-');
+      us[u]={salt,hash:await hashPw(p,salt)};localStorage.setItem('sqlt-users',JSON.stringify(us));
+    }else if(!us[u]||us[u].hash!==await hashPw(p,us[u].salt))return authMsg('Неверный логин или пароль.','bad');
+    localStorage.setItem('sqlt-session',u);
+    $('#apass').value='';$('#amsg').innerHTML='';$('#authpanel').classList.remove('on');loadSession();
+  }catch(e){authMsg(e.message,'bad')}
+}
+$('#authbtn').onclick=()=>{
+  if(canEdit){try{localStorage.removeItem('sqlt-session')}catch(e){}loadSession()}
+  else $('#authpanel').classList.add('on');
+};
+$('#authclose').onclick=()=>$('#authpanel').classList.remove('on');
+$('#alogin').onclick=()=>doAuth(false);
+$('#areg').onclick=()=>doAuth(true);
+$('#apass').onkeydown=e=>{if(e.key==='Enter')doAuth(false)};
+loadSession();
+showLesson(0);
 open(0);
 </script>
 </body>

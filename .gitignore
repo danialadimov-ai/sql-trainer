@@ -1,0 +1,4 @@
+# Данные пользователей и песочниц — не выкладывать на GitHub
+users.json
+sb-*.json
+server-error.log
