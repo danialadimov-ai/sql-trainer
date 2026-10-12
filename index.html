@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SQL Тренажёр</title>
+<script src="alasql.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f7fb;--card:#fff;--text:#161a2b;--mute:#6b7190;--line:#e4e7f2;--acc:#5b5bf0;--acc2:#8b5cf6;--ok:#12a36b;--bad:#e5484d;--code:#f1f2fa}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1020;--card:#171a2e;--text:#eceefb;--mute:#8e93b5;--line:#272b47;--acc:#7c7cff;--acc2:#a78bfa;--ok:#3ddc97;--bad:#ff6b70;--code:#10132a}}
+:root[data-theme="dark"]{--bg:#0e1020;--card:#171a2e;--text:#eceefb;--mute:#8e93b5;--line:#272b47;--acc:#7c7cff;--acc2:#a78bfa;--ok:#3ddc97;--bad:#ff6b70;--code:#10132a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;align-items:center;gap:16px;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card);flex-wrap:wrap}
+.logo{font-weight:800;font-size:18px;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+nav{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+nav button,.btn{font:inherit;border:1px solid var(--line);background:transparent;color:var(--text);padding:8px 14px;border-radius:10px;cursor:pointer}
+nav button.on{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border-color:transparent}
+.btn.p{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;border-color:transparent;font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+main{max-width:1200px;margin:0 auto;padding:20px}
+.view{display:none}.view.on{display:block}
+.grid{display:grid;grid-template-columns:260px 1fr 250px;gap:16px}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+h2,h3{margin:0 0 10px}h3{font-size:14px;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.task{display:flex;gap:8px;align-items:center;padding:9px 10px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+.task:hover{background:var(--code)}.task.on{border-color:var(--acc);background:var(--code)}
+.task .n{flex:1;font-size:14px}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--code);color:var(--mute)}
+.tag.ai{background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff}
+.dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--line)}.dot.ok{background:var(--ok);border-color:var(--ok)}
+textarea{width:100%;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;resize:vertical;min-height:130px}
+textarea:focus,select:focus,input:focus{outline:2px solid var(--acc)}
+select,input{font:inherit;background:var(--code);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px}
+.row{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap;align-items:center}
+.res{overflow-x:auto;margin-top:8px}
+table{border-collapse:collapse;font-size:13px;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 10px;text-align:left;white-space:nowrap}
+th{color:var(--mute);font-weight:600}
+.msg{padding:10px 14px;border-radius:12px;margin-top:10px;font-size:14px}
+.msg.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.msg.bad{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+.msg.info{background:var(--code);color:var(--mute)}
+.tbl{margin-bottom:12px}.tbl b{font-size:13px}.tbl div{font:12px ui-monospace,Menlo,monospace;color:var(--mute);word-break:break-word}
+.res-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.res-grid a{display:block;padding:16px;border:1px solid var(--line);border-radius:14px;color:inherit;text-decoration:none;background:var(--card)}
+.res-grid a:hover{border-color:var(--acc)}.res-grid b{display:block;margin-bottom:4px;color:var(--acc)}.res-grid span{font-size:13px;color:var(--mute)}
+details{margin-top:8px}summary{cursor:pointer;color:var(--acc)}
+pre{background:var(--code);padding:10px;border-radius:10px;overflow-x:auto;margin:8px 0 0}
+.prog{height:6px;background:var(--code);border-radius:9px;overflow:hidden;margin:8px 0 12px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));width:0;transition:width .3s}
+#aisettings-btn{position:fixed;right:16px;bottom:16px;z-index:60;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:20px;cursor:pointer;box-shadow:0 2px 14px rgba(0,0,0,.28)}
+#aisettings-btn:hover{border-color:var(--acc)}
+#aipanel{position:fixed;right:16px;bottom:72px;z-index:60;width:min(340px,92vw);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:none;box-shadow:0 10px 34px rgba(0,0,0,.35)}
+#aipanel.on{display:block;animation:pop .22s ease both}
+
+/* Плавные переходы и анимации */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.95) translateY(8px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+html{scroll-behavior:smooth}
+body{transition:background-color .35s ease,color .35s ease}
+header{transition:background-color .35s,border-color .35s}
+.card{transition:transform .25s ease,box-shadow .25s ease,background-color .35s,border-color .35s}
+.view.on{animation:fadeUp .35s ease both}
+.btn,nav button{transition:all .22s ease}
+.btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.16)}
+.btn:active:not(:disabled){transform:translateY(0) scale(.96)}
+nav button.on{transition:all .25s ease}
+textarea,input,select{transition:border-color .25s,box-shadow .25s,background-color .35s}
+.task{transition:background-color .2s ease,border-color .2s ease,transform .18s ease}
+.task:hover{transform:translateX(4px)}
+.dot{transition:background-color .3s,border-color .3s}
+.msg,.res,#out details,#out pre{animation:fadeUp .3s ease both}
+.res-grid a{transition:transform .22s ease,border-color .25s,box-shadow .25s ease}
+.res-grid a:hover{transform:translateY(-4px);box-shadow:0 8px 22px rgba(0,0,0,.18)}
+#aisettings-btn{transition:transform .3s ease,border-color .25s,box-shadow .25s}
+#aisettings-btn:hover{transform:rotate(40deg)}
+.prog i{transition:width .5s ease}
+summary{transition:color .2s}
+summary:hover{color:var(--acc2)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🗄️ SQL Тренажёр</div>
+  <nav id="nav">
+    <button data-v="practice" class="on">Практика</button>
+    <button data-v="ai">✨ ИИ-конструктор</button>
+    <button data-v="learn">Материалы</button>
+  </nav>
+  <button class="btn" id="theme">🌓</button>
+</header>
+<main>
+<section class="view on" id="practice">
+  <div class="grid">
+    <div class="card"><h3>Задачи</h3><div class="prog"><i id="bar"></i></div><div id="list"></div></div>
+    <div class="card">
+      <h2 id="tt"></h2><div id="td" style="color:var(--mute)"></div>
+      <div class="row" style="margin-bottom:0"><span class="tag" id="tl"></span></div>
+      <textarea id="sql" spellcheck="false" placeholder="SELECT ..."></textarea>
+      <div class="row">
+        <button class="btn p" id="run">▶ Выполнить</button>
+        <button class="btn" id="check">✓ Проверить ответ</button>
+        <button class="btn" id="hint">💡 Подсказка</button>
+        <button class="btn" id="sol">Решение</button>
+      </div>
+      <div id="out"></div>
+    </div>
+    <div class="card"><h3>Схема БД</h3><div id="schema"></div></div>
+  </div>
+</section>
+
+<section class="view" id="ai">
+  <div class="card" style="max-width:720px;margin:0 auto">
+    <h2>✨ ИИ-конструктор заданий</h2>
+    <p style="color:var(--mute);margin-top:0">Опишите, что хотите потренировать — ИИ составит задачу по учебной базе и проверит, что эталонное решение работает.</p>
+    <textarea id="aiq" style="min-height:90px" placeholder="Например: хочу потренировать LEFT JOIN и группировку по категориям товаров"></textarea>
+    <div class="row">
+      <select id="ailv"><option>лёгкий</option><option selected>средний</option><option>сложный</option></select>
+      <button class="btn p" id="aigo">Сгенерировать задание</button>
+    </div>
+    <div id="aimsg"></div>
+  </div>
+</section>
+
+<section class="view" id="learn">
+  <h2>Открытые источники для изучения SQL</h2>
+  <div class="res-grid" id="links"></div>
+</section>
+</main>
+
+<button id="aisettings-btn" title="Настройки ИИ">⚙️</button>
+<div id="aipanel">
+  <h3 style="margin-bottom:6px">Настройки ИИ</h3>
+  <div class="msg info" style="margin-top:0">Ключ сохраняется только в вашем браузере. Бесплатные ключи: aistudio.google.com/apikey · console.groq.com/keys. Без ключа работает бесплатный онлайн-ИИ.</div>
+  <div class="row" style="margin-bottom:0">
+    <select id="aiprov" style="width:100%">
+      <option value="auto">Бесплатный онлайн-ИИ (без ключа)</option>
+      <option value="gemini">Google Gemini (бесплатный ключ)</option>
+      <option value="groq">Groq / Llama (бесплатный ключ)</option>
+      <option value="oai">OpenAI-совместимый API</option>
+    </select>
+  </div>
+  <div class="row" style="margin-bottom:0"><input id="aikey" type="password" placeholder="API-ключ (пусто = встроенный)" style="width:100%"></div>
+  <div class="row" id="oairow" style="display:none;margin-bottom:0">
+    <input id="aibase" placeholder="URL API" style="flex:1;min-width:0">
+    <input id="aimodel" placeholder="Модель" style="width:130px">
+  </div>
+  <div class="row" style="margin-bottom:0"><button class="btn p" id="aisave">💾 Сохранить</button><button class="btn" id="aiclose">✕</button></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mk=(c,r)=>r.map(x=>Object.fromEntries(c.map((k,i)=>[k,x[i]])));
+const DB={
+ categories:mk(['id','name'],[[1,'Ноутбуки'],[2,'Видеокарты'],[3,'Мониторы'],[4,'Периферия']]),
+ products:mk(['id','name','category_id','brand','price','stock'],[[1,'ASUS Vivobook 15',1,'ASUS',65000,12],[2,'Lenovo IdeaPad 3',1,'Lenovo',52000,8],[3,'MacBook Air M2',1,'Apple',120000,5],[4,'GeForce RTX 4060',2,'NVIDIA',38000,15],[5,'Radeon RX 7600',2,'AMD',31000,10],[6,'Dell U2723QE',3,'Dell',55000,6],[7,'LG 27GP850',3,'LG',32000,9],[8,'Logitech MX Master 3S',4,'Logitech',9500,30],[9,'Razer BlackWidow',4,'Razer',11500,0]]),
+ orders:mk(['id','product_id','customer','qty','status','order_date'],[[1,1,'Альфа',2,'paid','2024-01-12'],[2,4,'Бета',1,'paid','2024-01-20'],[3,2,'Гамма',3,'cancelled','2024-02-02'],[4,8,'Дельта',5,'paid','2024-02-15'],[5,3,'Альфа',1,'new','2024-03-01'],[6,4,'Бета',2,'paid','2024-03-10'],[7,6,'Эпсилон',1,'paid','2024-03-18'],[8,1,'Гамма',1,'paid','2024-04-05']])
+};
+for(const t in DB){alasql('CREATE TABLE '+t);alasql.tables[t].data=DB[t].map(r=>({...r}));}
+$('#schema').innerHTML=Object.entries(DB).map(([t,r])=>`<div class="tbl"><b>${t}</b><div>${Object.keys(r[0]).join(', ')}</div></div>`).join('')+'<div class="msg info">status: paid / new / cancelled</div>';
+
+const tasks=[
+ ['Каталог цен','Выведите названия и цены всех товаров.','лёгкий','SELECT name, price FROM products','Выберите два столбца из products.'],
+ ['Дорогие товары','Выведите название и цену товаров дороже 50000, от самых дорогих к дешёвым.','лёгкий','SELECT name, price FROM products WHERE price > 50000 ORDER BY price DESC','WHERE фильтрует, ORDER BY ... DESC сортирует.'],
+ ['Нет в наличии','Выведите названия товаров, которых нет на складе (stock = 0).','лёгкий','SELECT name FROM products WHERE stock = 0','Сравните столбец stock с нулём.'],
+ ['Товары и категории','Выведите название товара и название его категории.','средний','SELECT p.name, c.name AS category FROM products p JOIN categories c ON c.id = p.category_id','Соедините таблицы по p.category_id = c.id.'],
+ ['Средняя цена','Для каждой категории выведите название и среднюю цену товаров.','средний','SELECT c.name, AVG(p.price) AS avg_price FROM categories c JOIN products p ON p.category_id = c.id GROUP BY c.name','JOIN + GROUP BY + AVG.'],
+ ['Продано штук','Для каждого товара с оплаченными заказами (status = \'paid\') выведите название и общее количество проданных штук.','средний','SELECT p.name, SUM(o.qty) AS sold FROM products p JOIN orders o ON o.product_id = p.id WHERE o.status = \'paid\' GROUP BY p.name','Сначала JOIN и WHERE, затем GROUP BY и SUM.'],
+ ['Большие категории','Выведите названия категорий, в которых больше двух товаров.','сложный','SELECT c.name FROM categories c JOIN products p ON p.category_id = c.id GROUP BY c.name HAVING COUNT(*) > 2','Условие на агрегат пишется в HAVING.'],
+ ['Без заказов','Выведите названия товаров, которые ни разу не заказывали.','сложный','SELECT p.name FROM products p LEFT JOIN orders o ON o.product_id = p.id WHERE o.id IS NULL','LEFT JOIN и проверка IS NULL.']
+].map(t=>({title:t[0],desc:t[1],level:t[2],sol:t[3],hint:t[4]}));
+
+let done=new Set(),cur=0;
+try{done=new Set(JSON.parse(localStorage.getItem('sqlt-done')||'[]'))}catch(e){}
+const saveDone=()=>{try{localStorage.setItem('sqlt-done',JSON.stringify([...done]))}catch(e){}};
+
+function runSql(sql){
+  if(!/^\s*select\b/i.test(sql))throw new Error('Разрешены только запросы SELECT.');
+  return alasql(sql.replace(/;\s*$/,''));
+}
+function table(rows){
+  if(!rows.length)return '<div class="msg info">Пустой результат</div>';
+  const k=Object.keys(rows[0]);
+  return `<div class="res"><table><tr>${k.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${rows.slice(0,100).map(r=>`<tr>${k.map(c=>`<td>${esc(r[c])}</td>`).join('')}</tr>`).join('')}</table></div><div style="color:var(--mute);font-size:12px;margin-top:6px">Строк: ${rows.length}</div>`;
+}
+const norm=(rows,ord)=>{const a=rows.map(r=>Object.values(r).map(v=>typeof v==='number'?Math.round(v*100)/100:String(v)).join('¦'));return ord?a:a.sort()};
+
+function renderList(){
+  $('#list').innerHTML=tasks.map((t,i)=>`<div class="task ${i===cur?'on':''}" data-i="${i}"><span class="dot ${done.has(t.title)?'ok':''}"></span><span class="n">${esc(t.title)}</span>${t.ai?'<span class="tag ai">ИИ</span>':''}</div>`).join('');
+  $('#bar').style.width=Math.round(100*tasks.filter(t=>done.has(t.title)).length/tasks.length)+'%';
+}
+function open(i){
+  cur=i;const t=tasks[i];
+  $('#tt').textContent=t.title;$('#td').textContent=t.desc;$('#tl').textContent=t.level;
+  $('#sql').value='';$('#out').innerHTML='';renderList();
+}
+$('#list').onclick=e=>{const d=e.target.closest('.task');if(d)open(+d.dataset.i)};
+$('#run').onclick=()=>{
+  try{$('#out').innerHTML=table(runSql($('#sql').value))}
+  catch(e){$('#out').innerHTML=`<div class="msg bad">Ошибка: ${esc(e.message)}</div>`}
+};
+$('#check').onclick=()=>{
+  const t=tasks[cur];
+  try{
+    const mine=runSql($('#sql').value),ref=runSql(t.sol),ord=/order\s+by/i.test(t.sol);
+    const ok=JSON.stringify(norm(mine,ord))===JSON.stringify(norm(ref,ord));
+    $('#out').innerHTML=table(mine)+`<div class="msg ${ok?'ok':'bad'}">${ok?'✅ Верно! Результат совпал с эталонным.':'❌ Результат отличается от эталонного. Проверьте условия, столбцы и порядок.'}</div>`;
+    if(ok){done.add(t.title);saveDone();renderList()}
+  }catch(e){$('#out').innerHTML=`<div class="msg bad">Ошибка: ${esc(e.message)}</div>`}
+};
+$('#hint').onclick=()=>{$('#out').innerHTML=`<div class="msg info">💡 ${esc(tasks[cur].hint)}</div>`};
+$('#sol').onclick=()=>{$('#out').innerHTML=`<details open><summary>Эталонное решение</summary><pre>${esc(tasks[cur].sol)}</pre></details>`};
+
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===b.dataset.v));
+});
+$('#theme').onclick=()=>{
+  const r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;
+  r.dataset.theme=dark?'light':'dark';
+};
+
+const LINKS=[
+ ['SQLBolt','https://sqlbolt.com','Интерактивные уроки с нуля, на английском.'],
+ ['SQL Academy','https://sql-academy.org','Бесплатный русскоязычный курс и тренажёр.'],
+ ['W3Schools SQL','https://www.w3schools.com/sql/','Справочник по командам с примерами.'],
+ ['SQLZoo','https://sqlzoo.net','Классические упражнения с проверкой.'],
+ ['Mode SQL Tutorial','https://mode.com/sql-tutorial/','Аналитический SQL: от основ до оконных функций.'],
+ ['PostgreSQL Tutorial','https://www.postgresqltutorial.com','Подробные разборы возможностей PostgreSQL.'],
+ ['SQL-EX','https://sql-ex.ru','Вдохновение для этого проекта: большой сборник задач.'],
+ ['Документация PostgreSQL','https://postgrespro.ru/docs','Официальная документация на русском.']
+];
+$('#links').innerHTML=LINKS.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener"><b>${l[0]}</b><span>${l[2]}</span></a>`).join('');
+
+let sample=null;
+(async()=>{try{sample=await claude.use('sample')}catch(e){}if(!sample)$('#aimsg').innerHTML='<div class="msg info">Конструктор работает без Claude: задание придумывает бесплатный онлайн-ИИ, при его недоступности — локальный генератор. Для лучшего качества укажите свой ключ в ⚙️ в углу экрана.</div>'})();
+
+// Настройки ИИ: сюда можно встроить свой ключ, свои настройки хранятся в браузере
+const BUILTIN_KEY=''; // например: const BUILTIN_KEY='ваш_ключ_Gemini';
+let AISET={prov:BUILTIN_KEY?'gemini':'auto',key:BUILTIN_KEY,base:'',model:''};
+try{Object.assign(AISET,JSON.parse(localStorage.getItem('sqlt-ai')||'{}'))}catch(e){}
+$('#aiprov').value=AISET.prov||'auto';$('#aikey').value=AISET.key||'';$('#aibase').value=AISET.base||'';$('#aimodel').value=AISET.model||'';
+const updProv=()=>{$('#oairow').style.display=$('#aiprov').value==='oai'?'flex':'none'};
+updProv();$('#aiprov').onchange=updProv;
+$('#aisettings-btn').onclick=()=>{$('#aipanel').classList.toggle('on')};
+$('#aiclose').onclick=()=>{$('#aipanel').classList.remove('on')};
+$('#aisave').onclick=()=>{
+  const pv=$('#aiprov').value;
+  AISET={prov:pv,key:$('#aikey').value.trim()||(pv==='gemini'?BUILTIN_KEY:''),base:$('#aibase').value.trim(),model:$('#aimodel').value.trim()};
+  try{localStorage.setItem('sqlt-ai',JSON.stringify(AISET))}catch(e){}
+  $('#aipanel').classList.remove('on');
+  $('#aimsg').innerHTML='<div class="msg ok">✅ Настройки сохранены.</div>';
+};
+
+// Локальный генератор заданий по шаблонам тем (запасной вариант, работает офлайн)
+const TPL=[
+ {lv:'лёгкий',kw:['сортир','order','топ'],title:'Топ-3 самых дорогих товара',description:'Выведите название и цену трёх самых дорогих товаров, от дорогих к дешёвым.',solution:'SELECT name, price FROM products ORDER BY price DESC LIMIT 3',hint:'Используйте ORDER BY ... DESC и LIMIT.'},
+ {lv:'лёгкий',kw:['like','поиск','назван'],title:'Поиск по бренду',description:'Выведите название и бренд товаров, чей бренд начинается на букву L.',solution:"SELECT name, brand FROM products WHERE brand LIKE 'L%'",hint:"LIKE с шаблоном 'L%'."},
+ {lv:'лёгкий',kw:['between','диапазон','цен'],title:'Диапазон цен',description:'Выведите название и цену товаров с ценой от 30000 до 60000 включительно, по возрастанию цены.',solution:'SELECT name, price FROM products WHERE price BETWEEN 30000 AND 60000 ORDER BY price',hint:'BETWEEN a AND b.'},
+ {lv:'лёгкий',kw:['in','статус','заказ'],title:'Активные заказы',description:'Выведите id, клиента, количество и дату заказов со статусом paid или new.',solution:"SELECT id, customer, qty, order_date FROM orders WHERE status IN ('paid','new')",hint:'WHERE status IN (...).'},
+ {lv:'лёгкий',kw:['дат','месяц','март'],title:'Заказы за март',description:'Выведите id, клиента, количество и статус заказов, сделанных в марте 2024 года.',solution:"SELECT id, customer, qty, status FROM orders WHERE order_date LIKE '2024-03%'",hint:"Даты — строки, поэтому подойдёт LIKE '2024-03%'."},
+ {lv:'лёгкий',kw:['distinct','уникальн','бренд'],title:'Уникальные бренды',description:'Выведите список уникальных брендов товаров по алфавиту.',solution:'SELECT DISTINCT brand FROM products ORDER BY brand',hint:'DISTINCT убирает дубликаты.'},
+ {lv:'средний',kw:['join','соедин'],title:'Товары с категориями',description:'Выведите название товара и название его категории.',solution:'SELECT p.name, c.name AS category FROM products p JOIN categories c ON c.id = p.category_id',hint:'Соедините таблицы по p.category_id = c.id.'},
+ {lv:'средний',kw:['left'],title:'Все категории и их товары',description:'Выведите все категории и названия их товаров, отсортируйте по названию категории.',solution:'SELECT c.name, p.name AS product FROM categories c LEFT JOIN products p ON p.category_id = c.id ORDER BY c.name',hint:'LEFT JOIN сохраняет категории, даже если в них нет товаров.'},
+ {lv:'средний',kw:['группир','group','количеств','count'],title:'Товаров в категории',description:'Для каждой категории выведите название и количество товаров в ней.',solution:'SELECT c.name, COUNT(p.id) AS cnt FROM categories c LEFT JOIN products p ON p.category_id = c.id GROUP BY c.name',hint:'LEFT JOIN + GROUP BY + COUNT.'},
+ {lv:'средний',kw:['средн','avg'],title:'Средняя цена брендов',description:'Для каждого бренда выведите среднюю цену его товаров.',solution:'SELECT brand, AVG(price) AS avg_price FROM products GROUP BY brand',hint:'GROUP BY brand + AVG(price).'},
+ {lv:'средний',kw:['макс','max','дорог'],title:'Максимум в категории',description:'Для каждой категории выведите название и цену самого дорогого товара в ней.',solution:'SELECT c.name, MAX(p.price) AS max_price FROM categories c JOIN products p ON p.category_id = c.id GROUP BY c.name',hint:'GROUP BY + MAX(price).'},
+ {lv:'сложный',kw:['сумм','sum','выручк','продаж'],title:'Выручка по товарам',description:'Для каждого товара посчитайте выручку от оплаченных заказов (количество × цена). Выведите название товара и выручку.',solution:"SELECT p.name, SUM(o.qty * p.price) AS revenue FROM products p JOIN orders o ON o.product_id = p.id WHERE o.status = 'paid' GROUP BY p.name",hint:"JOIN, WHERE status = 'paid', затем SUM(o.qty * p.price)."},
+ {lv:'сложный',kw:['having'],title:'Категории с большим запасом',description:'Выведите названия категорий, где суммарный запас товаров на складе больше 20, и этот запас.',solution:'SELECT c.name, SUM(p.stock) AS total_stock FROM categories c JOIN products p ON p.category_id = c.id GROUP BY c.name HAVING SUM(p.stock) > 20',hint:'Условие на агрегат пишется в HAVING.'},
+ {lv:'сложный',kw:['подзапрос','выше средн'],title:'Дороже среднего',description:'Выведите название и цену товаров, цена которых выше средней цены по всем товарам, от дорогих к дешёвым.',solution:'SELECT name, price FROM products WHERE price > (SELECT AVG(price) FROM products) ORDER BY price DESC',hint:'Подзапрос SELECT AVG(price) FROM products в WHERE.'},
+ {lv:'сложный',kw:['case','сегмент'],title:'Ценовые сегменты',description:'Разделите товары на сегменты: до 20000 — «бюджет», до 60000 — «средний», остальное — «премиум». Выведите название, цену и сегмент по убыванию цены.',solution:"SELECT name, price, CASE WHEN price < 20000 THEN 'бюджет' WHEN price < 60000 THEN 'средний' ELSE 'премиум' END AS segment FROM products ORDER BY price DESC",hint:'CASE WHEN ... THEN ... ELSE ... END.'}
+];
+function localTask(q,lv){
+  const s=q.toLowerCase();
+  let pool=TPL.filter(t=>t.lv===lv);if(!pool.length)pool=TPL;
+  const hit=pool.find(t=>t.kw.some(k=>s.includes(k)))||TPL.find(t=>t.kw.some(k=>s.includes(k)));
+  const t=hit||pool[Math.floor(Math.random()*pool.length)];
+  let title=t.title,n=2;while(tasks.some(x=>x.title.trim()===title))title=`${t.title} №${n++}`;
+  return{title,description:t.description,solution:t.solution,hint:t.hint};
+}
+
+// Вызов ИИ: Claude > ваш API-ключ (Gemini/Groq/OpenAI-совм.) > бесплатный Pollinations.ai
+function parseAI(txt){
+  const mj=String(txt||'').match(/\{[\s\S]*\}/);
+  if(!mj)throw new Error('ИИ вернул ответ не в формате JSON');
+  return JSON.parse(mj[0]);
+}
+async function callLLM(prompt){
+  if(sample)return await sample.json(prompt,{cache:false});
+  const pv=AISET.prov,key=AISET.key;
+  if(key&&pv==='gemini'){
+    const gem=async m=>{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(key)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}})});
+      const d=await r.json();
+      if(!r.ok)throw new Error('Gemini: '+((d.error&&d.error.message)||r.status));
+      return d;
+    };
+    let d,lastErr;
+    const models=[AISET.model||'gemini-3.6-flash','gemini-flash-latest','gemini-3.8-flash'];
+    for(const m of models){try{d=await gem(m);break}catch(e){lastErr=e;if(!/404|NOT_FOUND|no longer available|503|UNAVAILABLE|high demand/i.test(e.message))throw e}}
+    if(!d)throw lastErr;
+    return parseAI(d.candidates&&d.candidates[0]&&d.candidates[0].content.parts[0].text);
+  }
+  if(key&&(pv==='groq'||pv==='oai')){
+    const url=pv==='groq'?'https://api.groq.com/openai/v1/chat/completions':(AISET.base||'https://api.openai.com/v1').replace(/\/+$/,'')+'/chat/completions';
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:AISET.model||(pv==='groq'?'llama-3.3-70b-versatile':'gpt-4o-mini'),messages:[{role:'user',content:prompt}],response_format:{type:'json_object'},temperature:0.7})});
+    const d=await r.json();
+    if(!r.ok)throw new Error('API: '+((d.error&&d.error.message)||r.status));
+    return parseAI(d.choices&&d.choices[0]&&d.choices[0].message.content);
+  }
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),45000);
+  try{
+    const r=await fetch('https://text.pollinations.ai/',{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,body:JSON.stringify({messages:[{role:'user',content:prompt}],model:'openai',jsonMode:true})});
+    if(!r.ok)throw new Error('сервис ИИ недоступен ('+r.status+')');
+    return parseAI(await r.text());
+  }finally{clearTimeout(tm)}
+}
+
+$('#aigo').onclick=async()=>{
+  const q=$('#aiq').value.trim(),m=$('#aimsg'),lv=$('#ailv').value;
+  if(!q){m.innerHTML='<div class="msg bad">Опишите, какое задание вы хотите.</div>';return}
+  $('#aigo').disabled=true;
+  const schema=Object.entries(DB).map(([t,r])=>`${t}(${Object.keys(r[0]).join(', ')})`).join('\n');
+  const data=Object.entries(DB).map(([t,r])=>`${t}: ${JSON.stringify(r)}`).join('\n');
+  const prompt=`Ты составляешь задания для SQL-тренажёра. Таблицы:\n${schema}\nstatus в orders: paid, new, cancelled. Даты - строки формата YYYY-MM-DD.\nДанные таблиц:\n${data}\nЗапрос ученика: "${q}"\nСложность: ${lv}.\nТаблицы - магазин компьютерной техники. Составь ОДНО осмысленное задание на русском строго по этим таблицам: условие должно быть конкретным и однозначно проверяемым по результату запроса. Решение - один запрос SELECT в диалекте AlaSQL (без оконных функций, без CTE, без ILIKE), который на этих данных возвращает НЕПУСТОЙ результат - проверь это по данным выше. Если порядок строк не важен, не используй ORDER BY.\nВерни только JSON: {"title":"короткое название","description":"условие задачи","solution":"SQL","hint":"подсказка без готового ответа"}`;
+  let j=null,local=false,err='';
+  for(let att=1;att<=3&&!j;att++){
+    m.innerHTML=`<div class="msg info">ИИ придумывает задание… (попытка ${att}/3)</div>`;
+    try{
+      const cand=await callLLM(err?prompt+`\nПредыдущий твой ответ не прошёл проверку: ${err}. Исправься и верни корректный JSON.`:prompt);
+      if(!cand||!cand.solution||!cand.title)throw new Error('неполный JSON: нужны поля title, description, solution, hint');
+      cand.solution=String(cand.solution).replace(/```(?:sql)?/gi,'').trim();
+      if(!runSql(cand.solution).length)throw new Error('запрос solution вернул пустой результат');
+      j=cand;
+    }catch(e){err=e.message||String(e)}
+  }
+  if(!j){j=localTask(q,lv);local=true}
+  try{
+    let title=String(j.title).trim(),n=2;const t0=title;
+    while(tasks.some(x=>x.title.trim()===title))title=`${t0} №${n++}`;
+    tasks.push({title:title+' ',desc:j.description,level:lv,sol:j.solution,hint:j.hint||'Подсказки нет.',ai:true});
+    open(tasks.length-1);
+    document.querySelector('[data-v=practice]').click();
+    m.innerHTML=local?`<div class="msg info">ИИ не ответил (${esc(err)}), задание составлено локальным генератором. Проверьте интернет или настройки ИИ (⚙️ в углу экрана).</div>`:'';
+  }catch(e){m.innerHTML=`<div class="msg bad">Не удалось создать задание: ${esc(e.message||'попробуйте ещё раз')}</div>`}
+  $('#aigo').disabled=false;
+};
+open(0);
+</script>
+</body>
+</html>
