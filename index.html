@@ -53,7 +53,7 @@ th{color:var(--mute);font-weight:600}
 details{margin-top:8px}summary{cursor:pointer;color:var(--acc)}
 pre{background:var(--code);padding:10px;border-radius:10px;overflow-x:auto;margin:8px 0 0}
 .prog{height:6px;background:var(--code);border-radius:9px;overflow:hidden;margin:8px 0 12px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));width:0;transition:width .3s}
-#aisettings-btn{position:fixed;right:16px;bottom:16px;z-index:60;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:20px;cursor:pointer;box-shadow:0 2px 14px rgba(0,0,0,.28)}
+#aisettings-btn{display:none;position:fixed;right:16px;bottom:16px;z-index:60;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:20px;cursor:pointer;box-shadow:0 2px 14px rgba(0,0,0,.28)}
 #aisettings-btn:hover{border-color:var(--acc)}
 #aipanel{position:fixed;right:16px;bottom:72px;z-index:60;width:min(340px,92vw);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:none;box-shadow:0 10px 34px rgba(0,0,0,.35)}
 #aipanel.on{display:block;animation:pop .22s ease both}
@@ -541,7 +541,10 @@ function initSb(log){
   for(const q of log){try{sb.exec(q)}catch(e){}}
 }
 function renderSb(){
-  $('#acct').textContent=canEdit?'✅ '+acctName:'👤 Гость';
+  $('#acct').textContent=canEdit?(acctName==='admin'?'👑 admin':'✅ '+acctName):'👤 Гость';
+  const isAdmin=canEdit&&acctName==='admin';
+  $('#aisettings-btn').style.display=isAdmin?'block':'none';
+  if(!isAdmin)$('#aipanel').classList.remove('on');
   $('#authbtn').textContent=canEdit?'Выйти':'Войти';
   $('#sbstate').innerHTML=canEdit
     ?`<div class="msg ok">Вы вошли в аккаунт: можно выполнять любые запросы к базе. Изменения сохраняются ${onHttp?'на сервере — они доступны с любого компьютера':'в вашей личной копии (в этом браузере)'}.</div>`
