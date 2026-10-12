@@ -21,7 +21,7 @@ while ($true) {
         } catch [System.IO.IOException] {}
         $path = ''
         if ($req -match '(?m)^GET\s+([^\s?]+)') { $path = [System.Uri]::UnescapeDataString($Matches[1]).TrimStart('/') }
-        if ([string]::IsNullOrEmpty($path)) { $path = 'sql-trainer.html' }
+        if ([string]::IsNullOrEmpty($path)) { $path = 'index.html' }
         $file = Join-Path $root $path
         if ($req -match '(?m)^GET\s' -and (Test-Path $file -PathType Leaf) -and $path -notmatch '\.\.') {
             $bytes = [System.IO.File]::ReadAllBytes($file)
