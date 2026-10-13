@@ -9,9 +9,10 @@
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 --bg:#f7f7fb;--card:#fff;--text:#0d0d12;--mute:#67677a;--line:#e8e8f0;--acc:#3d3bff;--acc2:#fcaca9;--ok:#0ea472;--bad:#e5484d;--code:#f2f3f9;
 --pt1:#eef0ff;--pt2:#ffe9e8;--pt3:#e2f7ee;--pt4:#f3ecff;
---shadow:0 8px 30px rgba(20,20,70,.08);--grad:linear-gradient(90deg,var(--acc),var(--acc2));--bgrad:linear-gradient(180deg,#c6ceff 0%,#e6ebff 380px,#f7f7fb 760px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1020;--card:#171a2e;--text:#eceefb;--mute:#8e93b5;--line:#272b47;--acc:#7c7cff;--acc2:#fcaca9;--ok:#3ddc97;--bad:#ff6b70;--code:#10132a;--pt1:#1c1f3d;--pt2:#2b1b26;--pt3:#142a24;--pt4:#221a35;--shadow:0 8px 30px rgba(0,0,0,.4);--bgrad:linear-gradient(180deg,#1b2046 0%,#12142e 420px,#0e1020 760px)}}
-:root[data-theme="dark"]{--bg:#0e1020;--card:#171a2e;--text:#eceefb;--mute:#8e93b5;--line:#272b47;--acc:#7c7cff;--acc2:#fcaca9;--ok:#3ddc97;--bad:#ff6b70;--code:#10132a;--pt1:#1c1f3d;--pt2:#2b1b26;--pt3:#142a24;--pt4:#221a35;--shadow:0 8px 30px rgba(0,0,0,.4);--bgrad:linear-gradient(180deg,#1b2046 0%,#12142e 420px,#0e1020 760px)}
+--shadow:0 8px 30px rgba(20,20,70,.08);--grad:linear-gradient(90deg,var(--acc),var(--acc2));--bgrad:linear-gradient(180deg,#c6ceff 0%,#e6ebff 380px,#f7f7fb 760px);
+--sqlbg:#f6f7fd;--sqlhead:#ebedfa;--sqltext:#26264a;--sqlmute:#67677a;--sqlline:#dfe1f4;--sqlkbdbg:#ffffff;--sqlkbdline:#d5d8ee;--sqlkbdtext:#5a5a78}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1020;--card:#171a2e;--text:#eceefb;--mute:#8e93b5;--line:#272b47;--acc:#7c7cff;--acc2:#fcaca9;--ok:#3ddc97;--bad:#ff6b70;--code:#10132a;--pt1:#1c1f3d;--pt2:#2b1b26;--pt3:#142a24;--pt4:#221a35;--shadow:0 8px 30px rgba(0,0,0,.4);--bgrad:linear-gradient(180deg,#1b2046 0%,#12142e 420px,#0e1020 760px);--sqlbg:#10152b;--sqlhead:#171c33;--sqltext:#e8ebff;--sqlmute:#8e93b5;--sqlline:#232947;--sqlkbdbg:#0b0f22;--sqlkbdline:#2a3155;--sqlkbdtext:#aab0d8}}
+:root[data-theme="dark"]{--bg:#0e1020;--card:#171a2e;--text:#eceefb;--mute:#8e93b5;--line:#272b47;--acc:#7c7cff;--acc2:#fcaca9;--ok:#3ddc97;--bad:#ff6b70;--code:#10132a;--pt1:#1c1f3d;--pt2:#2b1b26;--pt3:#142a24;--pt4:#221a35;--shadow:0 8px 30px rgba(0,0,0,.4);--bgrad:linear-gradient(180deg,#1b2046 0%,#12142e 420px,#0e1020 760px);--sqlbg:#10152b;--sqlhead:#171c33;--sqltext:#e8ebff;--sqlmute:#8e93b5;--sqlline:#232947;--sqlkbdbg:#0b0f22;--sqlkbdline:#2a3155;--sqlkbdtext:#aab0d8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);min-height:100vh;color:var(--text);font:15px/1.55 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
@@ -51,11 +52,11 @@ h2,h3{margin:0 0 12px}h2{font-size:24px;font-weight:800;letter-spacing:-.02em}h3
 .task.on .dot.ok{background:#fff;border-color:#fff}
 .tmeta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 #tcount{color:var(--mute);font-size:12px;font-weight:600}
-.sqlbox{background:#10152b;border:1px solid #232947;border-radius:16px;overflow:hidden;margin-top:12px}
-.sqlhead{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#171c33;color:#8e93b5;font-size:12px;font-weight:600;letter-spacing:.05em}
-.sqlbox textarea{background:transparent;border:0;border-radius:0;color:#e8ebff;min-height:150px}
+.sqlbox{background:var(--sqlbg);border:1px solid var(--sqlline);border-radius:16px;overflow:hidden;margin-top:12px}
+.sqlhead{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--sqlhead);color:var(--sqlmute);font-size:12px;font-weight:600;letter-spacing:.05em}
+.sqlbox textarea{background:transparent;border:0;border-radius:0;color:var(--sqltext);min-height:150px}
 .sqlbox textarea:focus{outline:none}
-.kbdhint kbd{background:#0b0f22;border:1px solid #2a3155;border-radius:6px;padding:1px 7px;font:11px ui-monospace,Menlo,monospace;color:#aab0d8}
+.kbdhint kbd{background:var(--sqlkbdbg);border:1px solid var(--sqlkbdline);border-radius:6px;padding:1px 7px;font:11px ui-monospace,Menlo,monospace;color:var(--sqlkbdtext)}
 .res{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--card);max-height:300px;overflow:auto}
 .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-top:8px}
 #td{background:var(--code);border-radius:12px;padding:12px 16px;margin-top:10px;line-height:1.55}
@@ -336,7 +337,6 @@ summary:hover{color:var(--acc2)}
 <button id="aisettings-btn" title="Настройки ИИ"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></button>
 <div id="aipanel">
   <h3 style="margin-bottom:6px">Настройки ИИ</h3>
-  <div class="msg info" style="margin-top:0">Ключ сохраняется только в вашем браузере. Бесплатные ключи: aistudio.google.com/apikey · console.groq.com/keys. Без ключа работает бесплатный онлайн-ИИ.</div>
   <div class="row" style="margin-bottom:0">
     <select id="aiprov" style="width:100%">
       <option value="auto">Бесплатный онлайн-ИИ (без ключа)</option>
@@ -390,8 +390,10 @@ let done=new Set(),cur=0;
 try{done=new Set(JSON.parse(localStorage.getItem('sqlt-done')||'[]'))}catch(e){}
 const saveDone=()=>{try{localStorage.setItem('sqlt-done',JSON.stringify([...done]))}catch(e){}};
 
-// Ключ localStorage для черновика запроса конкретной задачи (у каждой задачи свой черновик)
-const tkey=t=>'sqlt-t-'+t.title.trim();
+// Ключ localStorage для черновика запроса конкретной задачи: у каждой задачи и каждого аккаунта свой черновик.
+// В гостевом режиме черновики не сохраняются в localStorage — живут только в памяти до перезагрузки страницы
+const sessionDrafts={};
+const tkey=t=>'sqlt-t-'+(acctName||'guest')+':'+t.title.trim();
 // ИИ-задания сохраняются в localStorage и восстанавливаются после перезагрузки
 const saveAiTasks=()=>{try{localStorage.setItem('sqlt-ai-tasks',JSON.stringify(tasks.filter(t=>t.ai)))}catch(e){}};
 try{(JSON.parse(localStorage.getItem('sqlt-ai-tasks')||'[]')||[]).forEach(t=>{
@@ -421,7 +423,9 @@ function open(i){
   $('#tl').className='tag '+(t.level==='лёгкий'?'lv1':t.level==='средний'?'lv2':'lv3');
   const tc=$('#tcount');if(tc)tc.textContent='Задача '+(i+1)+' из '+tasks.length;
   $('#tprev').disabled=i===0;$('#tnext').disabled=i===tasks.length-1;
-  let saved='';try{saved=localStorage.getItem(tkey(t))||''}catch(e){}
+  let saved='';
+  if(canEdit){try{saved=localStorage.getItem(tkey(t))||''}catch(e){}}
+  else saved=sessionDrafts[t.title]||'';
   $('#sql').value=saved;$('#out').innerHTML='';renderList();
   const ac=$('#list .task.on');if(ac)ac.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});
   if(saved.trim())runCheck(); // восстанавливаем последний результат проверки этой задачи
@@ -725,7 +729,7 @@ function renderQuiz(){
     <div class="qq"><span class="qn">${i+1}</span><span>${esc(x.q)}</span></div>
     ${x.options.map((o,k)=>`<label class="qopt"><input type="radio" name="q${i}" value="${k}"><span>${esc(o)}</span></label>`).join('')}
     <div class="qexp" style="display:none"></div>
-  </div>`).join('')+`<div class="row"><button class="btn p" id="qcheck">Проверить ответы</button><button class="btn" id="qagain">Пройти заново</button></div><div id="qscore"></div>`;
+  `).join('')+`<div class="row"><button class="btn p" id="qcheck">Проверить ответы</button><button class="btn" id="qagain">Пройти заново</button><button class="btn" id="qclear">Убрать тест</button></div><div id="qscore"></div>`;
 }
 function saveQuiz(){try{quiz?localStorage.setItem('sqlt-quiz',JSON.stringify(quiz)):localStorage.removeItem('sqlt-quiz')}catch(e){}}
 $('#qgo').onclick=async()=>{
@@ -754,6 +758,7 @@ $('#qbody').onclick=e=>{
   const b=e.target.closest('button');
   if(!b||!quiz)return;
   if(b.id==='qagain'){renderQuiz();return}
+  if(b.id==='qclear'){quiz=null;saveQuiz();renderQuiz();$('#qmsg').innerHTML='';return}
   if(b.id!=='qcheck')return;
   let score=0;const total=quiz.questions.length;
   quiz.questions.forEach((x,i)=>{
@@ -896,14 +901,14 @@ async function loadSession(){
       const d=await api('/api/sandbox?u='+encodeURIComponent(u)+'&h='+encodeURIComponent(h));
       canEdit=true;acctName=u;sessHash=h;
       sbLog=[].concat(d.log||[]).filter(x=>typeof x==='string');
-      initSb(sbLog);renderSb();return;
+      initSb(sbLog);renderSb();open(cur);return;
     }catch(e){try{localStorage.removeItem('sqlt-session')}catch(_){}}
   }
   if(u&&getUsers()[u]){
     canEdit=true;acctName=u;sessHash='';
     try{sbLog=JSON.parse(localStorage.getItem('sqlt-sb-'+u)||'[]').filter(x=>typeof x==='string')}catch(e){sbLog=[]}
   }else{canEdit=false;acctName='';sessHash='';sbLog=[]}
-  initSb(sbLog);renderSb();
+  initSb(sbLog);renderSb();open(cur);
 }
 async function doAuth(reg){
   const u=$('#auser').value.trim().toLowerCase(),p=$('#apass').value;
@@ -945,6 +950,8 @@ renderListCollapse();
 // Входные анимации ленты задач и кнопок уроков — только при первой загрузке страницы
 $('#list').classList.add('intro');setTimeout(()=>$('#list').classList.remove('intro'),1600);
 $('#lnav').classList.add('intro');setTimeout(()=>$('#lnav').classList.remove('intro'),1200);
+// Чистим черновики задач старого формата (без логина в ключе), оставшиеся с прошлых версий
+try{for(const k of Object.keys(localStorage))if(/^sqlt-t-[^:]*$/.test(k))localStorage.removeItem(k)}catch(e){}
 // Восстановление незавершённого теста после перезагрузки страницы
 try{const s=normQuiz(JSON.parse(localStorage.getItem('sqlt-quiz')||'null'));if(s){quiz=s;renderQuiz()}}catch(e){}
 for(const id of ['sbq','aiq','qask']){
@@ -952,7 +959,7 @@ for(const id of ['sbq','aiq','qask']){
   if(drafts[id])el.value=drafts[id];
   el.addEventListener('input',()=>{try{localStorage.setItem('sqlt-draft-'+id,el.value)}catch(e){}});
 }
-$('#sql').addEventListener('input',()=>{try{localStorage.setItem(tkey(tasks[cur]),$('#sql').value)}catch(e){}});
+$('#sql').addEventListener('input',()=>{if(canEdit){try{localStorage.setItem(tkey(tasks[cur]),$('#sql').value)}catch(e){}}else{sessionDrafts[tasks[cur].title]=$('#sql').value}});
 $('#sql').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runCheck()}});
 $('#sbq').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();$('#sbrun').click()}});
 </script>
