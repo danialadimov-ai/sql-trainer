@@ -114,7 +114,7 @@ summary:hover{color:var(--acc2)}
   <div class="grid">
     <div class="side">
     <div class="card"><h3>Схема БД</h3><div id="schema"></div></div>
-    <div class="card"><h3>Задачи</h3><div class="prog"><i id="bar"></i></div><div id="list"></div></div>
+    <div class="card"><h3 id="listhead" style="cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center">Задачи <span id="listarrow" style="font-weight:400">▾</span></h3><div id="listwrap"><div class="prog"><i id="bar"></i></div><div id="list"></div></div></div>
     </div>
     <div class="card">
       <h2 id="tt"></h2><div id="td" style="color:var(--mute)"></div>
@@ -137,17 +137,19 @@ summary:hover{color:var(--acc2)}
 </section>
 
 <section class="view" id="sandbox">
-  <div class="grid" style="grid-template-columns:290px 1fr">
-    <div class="card"><h3>Таблицы песочницы</h3><div id="sbschema"></div></div>
+  <div class="grid" id="sbgrid" style="grid-template-columns:290px 1fr">
+    <div class="card" id="sbside"><h3>Таблицы песочницы</h3><div id="sbschema"></div></div>
     <div class="card">
       <h2>🧪 Песочница</h2>
       <div id="sbstate"></div>
-      <textarea id="sbq" spellcheck="false" placeholder="INSERT INTO categories (id, name) VALUES (5, 'Серверы')"></textarea>
-      <div class="row">
-        <button class="btn p" id="sbrun">▶ Выполнить</button>
-        <button class="btn" id="sbreset">↺ Сбросить базу</button>
+      <div id="sbbody">
+        <textarea id="sbq" spellcheck="false" placeholder="INSERT INTO categories (id, name) VALUES (5, 'Серверы')"></textarea>
+        <div class="row">
+          <button class="btn p" id="sbrun">▶ Выполнить</button>
+          <button class="btn" id="sbreset">↺ Сбросить базу</button>
+        </div>
+        <div style="color:var(--mute);font-size:13px">Можно выполнять любые запросы к своей копии базы. Один запрос за раз.</div>
       </div>
-      <div style="color:var(--mute);font-size:13px">Гость: только SELECT. С аккаунтом: любые запросы к базе. Один запрос за раз.</div>
       <div id="sbout"></div>
     </div>
   </div>
@@ -242,6 +244,15 @@ let done=new Set(),cur=0;
 try{done=new Set(JSON.parse(localStorage.getItem('sqlt-done')||'[]'))}catch(e){}
 const saveDone=()=>{try{localStorage.setItem('sqlt-done',JSON.stringify([...done]))}catch(e){}};
 
+// Ключ localStorage для черновика запроса конкретной задачи (у каждой задачи свой черновик)
+const tkey=t=>'sqlt-t-'+t.title.trim();
+// ИИ-задания сохраняются в localStorage и восстанавливаются после перезагрузки
+const saveAiTasks=()=>{try{localStorage.setItem('sqlt-ai-tasks',JSON.stringify(tasks.filter(t=>t.ai)))}catch(e){}};
+try{(JSON.parse(localStorage.getItem('sqlt-ai-tasks')||'[]')||[]).forEach(t=>{
+  if(t&&t.title&&t.sol&&!tasks.some(x=>x.title.trim()===String(t.title).trim()))
+    tasks.push({title:String(t.title),desc:t.desc||t.description||'',level:t.level||'средний',sol:t.sol,hint:t.hint||'Подсказки нет.',ai:true});
+})}catch(e){}
+
 function runSql(sql){
   if(!/^\s*select\b/i.test(sql))throw new Error('Разрешены только запросы SELECT.');
   return alasql(sql.replace(/;\s*$/,''));
@@ -260,10 +271,17 @@ function renderList(){
 function open(i){
   cur=i;const t=tasks[i];
   $('#tt').textContent=t.title;$('#td').textContent=t.desc;$('#tl').textContent=t.level;
-  $('#sql').value='';try{localStorage.removeItem('sqlt-draft-sql')}catch(e){}$('#out').innerHTML='';renderList();
+  let saved='';try{saved=localStorage.getItem(tkey(t))||''}catch(e){}
+  $('#sql').value=saved;$('#out').innerHTML='';renderList();
+  if(saved.trim())runCheck(); // восстанавливаем последний результат проверки этой задачи
   try{$('#exp').innerHTML='<h3 style="margin-top:22px">Ожидаемый результат</h3>'+table(runSql(t.sol))+(/order\s+by/i.test(t.sol)?'<div style="color:var(--mute);font-size:12px">Порядок строк важен.</div>':'')}catch(e){$('#exp').innerHTML=''}
 }
 $('#list').onclick=e=>{const d=e.target.closest('.task');if(d)open(+d.dataset.i)};
+// Сворачивание списка задач (состояние сохраняется между сессиями)
+let listCollapsed=false;
+try{listCollapsed=localStorage.getItem('sqlt-tasks-collapsed')==='1'}catch(e){}
+const renderListCollapse=()=>{$('#listwrap').style.display=listCollapsed?'none':'';$('#listarrow').textContent=listCollapsed?'▸':'▾'};
+$('#listhead').onclick=()=>{listCollapsed=!listCollapsed;try{localStorage.setItem('sqlt-tasks-collapsed',listCollapsed?'1':'0')}catch(e){}renderListCollapse()};
 function compare(mine,t){
   const ref=runSql(t.sol),ord=/order\s+by/i.test(t.sol);
   if(JSON.stringify(norm(mine,ord))===JSON.stringify(norm(ref,ord)))return{ok:true};
@@ -273,14 +291,15 @@ function compare(mine,t){
   else if(mc!==rc)why=`Число столбцов отличается: у вас ${mc}, ожидается ${rc}.`;
   return{ok:false,why};
 }
-$('#run').onclick=()=>{
+function runCheck(){
   const t=tasks[cur];
   try{
     const mine=runSql($('#sql').value),c=compare(mine,t);
     $('#out').innerHTML='<h3>Ваш результат</h3>'+table(mine)+`<div class="msg ${c.ok?'ok':'bad'}">${c.ok?'✅ Верно! Ваш результат совпал с ожидаемым.':'❌ Не совпадает с ожидаемым. '+esc(c.why)}</div>`;
     if(c.ok){done.add(t.title);saveDone();renderList()}
   }catch(e){$('#out').innerHTML=`<div class="msg bad">Ошибка: ${esc(e.message)}</div>`}
-};
+}
+$('#run').onclick=runCheck;
 $('#hint').onclick=()=>{$('#out').innerHTML=`<div class="msg info">💡 ${esc(tasks[cur].hint)}</div>`};
 $('#sol').onclick=()=>{$('#out').innerHTML=`<details open><summary>Эталонное решение</summary><pre>${esc(tasks[cur].sol)}</pre></details>`};
 
@@ -294,6 +313,12 @@ $('#theme').onclick=()=>{
 };
 
 const LINKS=[
+ {n:'SQL-EX',pin:true,u:'https://sql-ex.ru',s:'Вдохновение для этого проекта: большой сборник задач.',f:`
+  <p><b>Что это.</b> Легендарный русскоязычный задачник по SQL, существующий с начала 2000-х. Именно им вдохновлён наш тренажёр. Десятки задач на нескольких учебных схемах: компьютерная техника, корабли, авиарейсы, склад красок.</p>
+  <p><b>Как устроен.</b> Задачи разбиты по стадиям сложности. Решение проверяется на двух наборах данных — видимом и скрытом, поэтому «подогнать» ответ под пример не выйдет: запрос обязан быть правильным в общем случае. Есть рейтинг, уровни и сертификация.</p>
+  <p><b>Плюсы.</b> Лучшая «прокачка» до автоматизма; строгая проверка учит писать точно и читать условие до конца. <b>Минусы.</b> Формулировки требуют внимательности; новичку поначалу тяжело; часть функций доступна после регистрации.</p>
+  <p><b>Как заниматься.</b> Решать по две-три задачи в день; после сдачи обязательно разбирать чужие решения — они открываются после вашего правильного ответа.</p>
+  <p><b>Кому подходит.</b> Всем, кто освоил базу, — это главный «спортзал» по SQL на русском языке.</p>`},
  {n:'SQLBolt',u:'https://sqlbolt.com',s:'Интерактивные уроки с нуля, на английском.',f:`
   <p><b>Что это.</b> Бесплатный интерактивный курс SQL для новичков, работающий прямо в браузере: регистрация и установка не нужны.</p>
   <p><b>Как устроен.</b> 19 коротких уроков: сначала немного теории, затем интерактивное окно, где вы пишете запрос к встроенной учебной базе и сразу видите результат. Ошибки сопровождаются понятными сообщениями.</p>
@@ -332,12 +357,6 @@ const LINKS=[
   <p><b>Формат.</b> Статьи с пошаговыми примерами и диаграммами; предполагается, что вы повторяете запросы в собственной установке PostgreSQL.</p>
   <p><b>Плюсы.</b> Глубина и аккуратность изложения, охватывает даже администрирование. <b>Минусы.</b> Английский язык; нужно ставить PostgreSQL локально; интерактива почти нет.</p>
   <p><b>Кому подходит.</b> Тем, кто выбрал PostgreSQL основной СУБД и хочет разобраться в ней глубоко и «по книге».</p>`},
- {n:'SQL-EX',u:'https://sql-ex.ru',s:'Вдохновение для этого проекта: большой сборник задач.',f:`
-  <p><b>Что это.</b> Легендарный русскоязычный задачник по SQL, существующий с начала 2000-х. Именно им вдохновлён наш тренажёр. Десятки задач на нескольких учебных схемах: компьютерная техника, корабли, авиарейсы, склад красок.</p>
-  <p><b>Как устроен.</b> Задачи разбиты по стадиям сложности. Решение проверяется на двух наборах данных — видимом и скрытом, поэтому «подогнать» ответ под пример не выйдет: запрос обязан быть правильным в общем случае. Есть рейтинг, уровни и сертификация.</p>
-  <p><b>Плюсы.</b> Лучшая «прокачка» до автоматизма; строгая проверка учит писать точно и читать условие до конца. <b>Минусы.</b> Формулировки требуют внимательности; новичку поначалу тяжело; часть функций доступна после регистрации.</p>
-  <p><b>Как заниматься.</b> Решать по две-три задачи в день; после сдачи обязательно разбирать чужие решения — они открываются после вашего правильного ответа.</p>
-  <p><b>Кому подходит.</b> Всем, кто освоил базу, — это главный «спортзал» по SQL на русском языке.</p>`},
  {n:'Документация PostgreSQL',u:'https://postgrespro.ru/docs',s:'Официальная документация на русском.',f:`
   <p><b>Что это.</b> Официальный перевод документации PostgreSQL на русский язык от компании Postgres Professional — первоисточник по этой СУБД.</p>
   <p><b>Что внутри.</b> Полное описание синтаксиса каждой команды, все типы данных и встроенные функции, настройка сервера, репликация, оптимизация запросов через EXPLAIN, внутреннее устройство базы.</p>
@@ -345,7 +364,7 @@ const LINKS=[
   <p><b>Плюсы.</b> Абсолютная точность и полнота, русский язык, поддержка актуальных версий. <b>Минусы.</b> Сухой академический стиль; новичку без контекста читается тяжело.</p>
   <p><b>Кому подходит.</b> Разработчикам и администраторам, которые работают с PostgreSQL каждый день, — как «словарь» и «энциклопедия» рядом с курсами и задачниками.</p>`}
 ];
-$('#links').innerHTML=LINKS.map((l,i)=>`<a href="${l.u}" data-i="${i}" rel="noopener"><b>${l.n}</b><span>${l.s}</span></a>`).join('');
+$('#links').innerHTML=LINKS.map((l,i)=>`<a href="${l.u}" data-i="${i}" rel="noopener"><b>${l.n}</b>${l.pin?'<span class="tag ai">📌 закреплено</span>':''}<span>${l.s}</span></a>`).join('');
 $('#links').onclick=e=>{
   const a=e.target.closest('a[data-i]');if(!a)return;
   e.preventDefault();const l=LINKS[+a.dataset.i];
@@ -483,6 +502,7 @@ $('#aigo').onclick=async()=>{
     let title=String(j.title).trim(),n=2;const t0=title;
     while(tasks.some(x=>x.title.trim()===title))title=`${t0} №${n++}`;
     tasks.push({title:title+' ',desc:j.description,level:lv,sol:j.solution,hint:j.hint||'Подсказки нет.',ai:true});
+    saveAiTasks();
     open(tasks.length-1);
     document.querySelector('[data-v=practice]').click();
     m.innerHTML=local?`<div class="msg info">ИИ не ответил (${esc(err)}), задание составлено локальным генератором. Проверьте интернет или настройки ИИ (⚙️ в углу экрана).</div>`:'';
@@ -548,7 +568,11 @@ function renderSb(){
   $('#authbtn').textContent=canEdit?'Выйти':'Войти';
   $('#sbstate').innerHTML=canEdit
     ?`<div class="msg ok">Вы вошли в аккаунт: можно выполнять любые запросы к базе. Изменения сохраняются ${srvOn?'на сервере — они доступны с любого компьютера':'в вашей личной копии (в этом браузере)'}.</div>`
-    :'<div class="msg info">Гостевой режим: можно только читать данные (SELECT). Чтобы изменять базу, нажмите «Войти» в шапке и создайте аккаунт.</div>';
+    :'<div class="msg info">🔒 Песочница доступна только авторизованным пользователям. Войдите в аккаунт или создайте новый — и сможете изменять свою копию базы любыми запросами.</div><div class="row" style="margin-bottom:0"><button class="btn p" id="sblogin">Войти / Создать аккаунт</button></div>';
+  const sbl=$('#sblogin');if(sbl)sbl.onclick=()=>$('#authpanel').classList.add('on');
+  $('#sbbody').style.display=canEdit?'':'none';
+  $('#sbside').style.display=canEdit?'':'none';
+  $('#sbgrid').style.gridTemplateColumns=canEdit?'290px 1fr':'1fr';
   $('#sbreset').disabled=!canEdit;
   $('#sbschema').innerHTML=Object.keys(sb.tables).map(t=>{
     const T=sb.tables[t],cols=(T.columns&&T.columns.length)?T.columns.map(c=>c.columnid):Object.keys(T.data[0]||{});
@@ -563,8 +587,8 @@ $('#sbrun').onclick=()=>{
   const q=$('#sbq').value.replace(/;\s*$/,''),o=$('#sbout');
   try{
     if(!q.trim())throw new Error('Введите запрос.');
+    if(!canEdit)throw new Error('Песочница доступна только авторизованным пользователям. Войдите в аккаунт.');
     const isSel=/^\s*select\b/i.test(q);
-    if(!canEdit&&!isSel)throw new Error('Гостевой режим: доступны только запросы SELECT. Войдите в аккаунт, чтобы делать с базой что угодно.');
     if(q.length>2000)throw new Error('Слишком длинный запрос.');
     const r=sb.exec(q);
     if(isSel){o.innerHTML=table(r)}
@@ -644,17 +668,20 @@ $('#authclose').onclick=()=>$('#authpanel').classList.remove('on');
 $('#alogin').onclick=()=>doAuth(false);
 $('#areg').onclick=()=>doAuth(true);
 $('#apass').onkeydown=e=>{if(e.key==='Enter')doAuth(false)};
-// Черновики полей ввода: текст сохраняется при наборе и восстанавливается после перехода между вкладками и перезагрузки
+// Черновики полей ввода: текст сохраняется при наборе и восстанавливается после перехода между вкладками и перезагрузки.
+// У практики (#sql) черновик отдельный для каждой задачи — сохраняется под ключом задачи (см. tkey)
 const drafts={};
-try{for(const id of ['sql','sbq','aiq']){const v=localStorage.getItem('sqlt-draft-'+id);if(v)drafts[id]=v}}catch(e){}
+try{for(const id of ['sbq','aiq']){const v=localStorage.getItem('sqlt-draft-'+id);if(v)drafts[id]=v}}catch(e){}
 loadSession();
 showLesson(0);
 open(0);
-for(const id of ['sql','sbq','aiq']){
+renderListCollapse();
+for(const id of ['sbq','aiq']){
   const el=document.getElementById(id);
   if(drafts[id])el.value=drafts[id];
   el.addEventListener('input',()=>{try{localStorage.setItem('sqlt-draft-'+id,el.value)}catch(e){}});
 }
+$('#sql').addEventListener('input',()=>{try{localStorage.setItem(tkey(tasks[cur]),$('#sql').value)}catch(e){}});
 </script>
 </body>
 </html>
