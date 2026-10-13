@@ -133,6 +133,9 @@ pre{background:var(--code);padding:12px;border-radius:12px;overflow-x:auto;margi
 .tnum.lv2{background:var(--pt1);color:var(--acc)}
 .tnum.lv3{background:var(--pt2);color:#d6413d}
 .task.on .tnum{background:rgba(255,255,255,.22);color:#fff}
+.tdel{cursor:pointer;opacity:0;font-size:15px;line-height:1;padding:0 3px;border-radius:6px;color:inherit;transition:opacity .18s,background .18s}
+.task:hover .tdel,.task.on .tdel{opacity:.6}
+.tdel:hover{opacity:1!important;background:rgba(228,72,77,.25)}
 .pgrid{display:grid;grid-template-columns:minmax(300px,400px) minmax(0,1fr);gap:20px;align-items:start}
 .pside{display:flex;flex-direction:column;gap:20px;min-width:0}
 .pside .card,.pwork{padding:20px}
@@ -400,6 +403,8 @@ try{(JSON.parse(localStorage.getItem('sqlt-ai-tasks')||'[]')||[]).forEach(t=>{
   if(t&&t.title&&t.sol&&!tasks.some(x=>x.title.trim()===String(t.title).trim()))
     tasks.push({title:String(t.title),desc:t.desc||t.description||'',level:t.level||'средний',sol:t.sol,hint:t.hint||'Подсказки нет.',ai:true});
 })}catch(e){}
+// Задачи, удалённые пользователем (по названию), не показываем; вернуть стандартные можно кнопкой в пустом списке
+try{const del=JSON.parse(localStorage.getItem('sqlt-del')||'[]');if(del.length)for(let i=tasks.length-1;i>=0;i--)if(del.includes(tasks[i].title.trim()))tasks.splice(i,1)}catch(e){}
 
 function runSql(sql){
   if(!/^\s*select\b/i.test(sql))throw new Error('Разрешены только запросы SELECT.');
@@ -413,16 +418,22 @@ function table(rows){
 const norm=(rows,ord)=>{const a=rows.map(r=>Object.values(r).map(v=>typeof v==='number'?Math.round(v*100)/100:String(v)).join('¦'));return ord?a:a.sort()};
 
 function renderList(){
-  $('#list').innerHTML=tasks.map((t,i)=>`<div class="task ${i===cur?'on':''}" data-i="${i}" style="--i:${i}" title="${esc(t.title)}"><span class="tnum ${t.level==='лёгкий'?'lv1':t.level==='средний'?'lv2':'lv3'}">${i+1}</span><span class="dot ${done.has(t.title)?'ok':''}"></span><span class="n">${esc(t.title)}</span>${t.ai?'<span class="tag ai">ИИ</span>':''}</div>`).join('');
-  $('#bar').style.width=Math.round(100*tasks.filter(t=>done.has(t.title)).length/tasks.length)+'%';
+  $('#list').innerHTML=tasks.map((t,i)=>`<div class="task ${i===cur?'on':''}" data-i="${i}" style="--i:${i}" title="${esc(t.title)}"><span class="tnum ${t.level==='лёгкий'?'lv1':t.level==='средний'?'lv2':'lv3'}">${i+1}</span><span class="dot ${done.has(t.title)?'ok':''}"></span><span class="n">${esc(t.title)}</span>${t.ai?'<span class="tag ai">ИИ</span>':''}<span class="tdel" data-del="${i}" title="Удалить задачу">×</span></div>`).join('')||'<div class="msg info" style="margin:0;flex:1">Все задачи удалены.</div><button class="btn" id="trestore">Вернуть стандартные задачи</button>';
+  $('#bar').style.width=(tasks.length?Math.round(100*tasks.filter(t=>done.has(t.title)).length/tasks.length):0)+'%';
   const hd=$('#herodone');if(hd)hd.textContent=`Решено ${tasks.filter(t=>done.has(t.title)).length} из ${tasks.length} задач`;
 }
 function open(i){
-  cur=i;const t=tasks[i];
+  if(!tasks.length){ // все задачи удалены — показываем пустое состояние
+    cur=0;$('#tt').textContent='Задач нет';$('#td').textContent='Вернуть стандартные задачи можно кнопкой в списке задач.';
+    $('#tl').textContent='';const tc0=$('#tcount');if(tc0)tc0.textContent='';
+    $('#tprev').disabled=true;$('#tnext').disabled=true;
+    $('#sql').value='';$('#out').innerHTML='';$('#exp').innerHTML='';renderList();return;
+  }
+  cur=Math.max(0,Math.min(i,tasks.length-1));const t=tasks[cur];
   $('#tt').textContent=t.title;$('#td').textContent=t.desc;$('#tl').textContent=t.level;
   $('#tl').className='tag '+(t.level==='лёгкий'?'lv1':t.level==='средний'?'lv2':'lv3');
-  const tc=$('#tcount');if(tc)tc.textContent='Задача '+(i+1)+' из '+tasks.length;
-  $('#tprev').disabled=i===0;$('#tnext').disabled=i===tasks.length-1;
+  const tc=$('#tcount');if(tc)tc.textContent='Задача '+(cur+1)+' из '+tasks.length;
+  $('#tprev').disabled=cur===0;$('#tnext').disabled=cur===tasks.length-1;
   let saved='';
   if(canEdit){try{saved=localStorage.getItem(tkey(t))||''}catch(e){}}
   else saved=sessionDrafts[t.title]||'';
@@ -432,7 +443,22 @@ function open(i){
   else $('#out').innerHTML='<div class="msg info" style="margin-top:0">Введите запрос и нажмите «Выполнить» — ваш результат появится здесь.</div>';
   try{$('#exp').innerHTML='<h3>Ожидаемый результат</h3>'+table(runSql(t.sol))+(/order\s+by/i.test(t.sol)?'<div style="color:var(--mute);font-size:12px">Порядок строк важен.</div>':'')}catch(e){$('#exp').innerHTML=''}
 }
-$('#list').onclick=e=>{const d=e.target.closest('.task');if(d)open(+d.dataset.i)};
+$('#list').onclick=e=>{
+  const del=e.target.closest('.tdel');
+  if(del){e.stopPropagation();delTask(+del.dataset.del);return}
+  if(e.target.closest('#trestore')){try{localStorage.removeItem('sqlt-del')}catch(_){}location.reload();return}
+  const d=e.target.closest('.task');if(d)open(+d.dataset.i);
+};
+// Удаление задачи (любой, включая стандартные): название уходит в sqlt-del, чтобы задача не вернулась после перезагрузки
+function delTask(i){
+  const t=tasks[i];if(!t)return;
+  if(!confirm('Удалить задачу «'+t.title.trim()+'»?'))return;
+  let del=[];try{del=JSON.parse(localStorage.getItem('sqlt-del')||'[]')}catch(e){}
+  del.push(t.title.trim());
+  try{localStorage.setItem('sqlt-del',JSON.stringify(del))}catch(e){}
+  tasks.splice(i,1);saveAiTasks();
+  open(i<cur?cur-1:cur);
+}
 // Сворачивание списка задач (состояние сохраняется между сессиями)
 let listCollapsed=false;
 try{listCollapsed=localStorage.getItem('sqlt-tasks-collapsed')==='1'}catch(e){}
@@ -450,7 +476,7 @@ function compare(mine,t){
   return{ok:false,why};
 }
 function runCheck(){
-  const t=tasks[cur];
+  const t=tasks[cur];if(!t)return;
   try{
     const mine=runSql($('#sql').value),c=compare(mine,t);
     $('#out').innerHTML='<h3>Ваш результат</h3>'+table(mine)+`<div class="msg ${c.ok?'ok':'bad'}">${c.ok?'Верно! Ваш результат совпал с ожидаемым.':'Не совпадает с ожидаемым. '+esc(c.why)}</div>`;
@@ -458,8 +484,12 @@ function runCheck(){
   }catch(e){$('#out').innerHTML=`<div class="msg bad">Ошибка: ${esc(e.message)}</div>`}
 }
 $('#run').onclick=runCheck;
-$('#hint').onclick=()=>{$('#out').innerHTML=`<div class="msg info">${esc(tasks[cur].hint)}</div>`};
-$('#sol').onclick=()=>{$('#out').innerHTML=`<details open><summary>Эталонное решение</summary><pre>${esc(tasks[cur].sol)}</pre></details>`};
+$('#hint').onclick=()=>{const t=tasks[cur];if(!t)return;$('#out').innerHTML=`<div class="msg info">${esc(t.hint)}</div>`};
+$('#sol').onclick=()=>{
+  const t=tasks[cur];if(!t)return;
+  $('#out').innerHTML=`<details open><summary>Эталонное решение</summary><pre>${esc(t.sol)}</pre></details><div class="row" style="margin-top:8px;margin-bottom:0"><button class="btn p" id="solfill">Вставить в редактор</button></div>`;
+  $('#solfill').onclick=()=>{$('#sql').value=t.sol;$('#sql').dispatchEvent(new Event('input'));$('#sql').focus()};
+};
 
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x===b));
