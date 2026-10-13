@@ -133,14 +133,15 @@ pre{background:var(--code);padding:12px;border-radius:12px;overflow-x:auto;margi
 .tnum.lv2{background:var(--pt1);color:var(--acc)}
 .tnum.lv3{background:var(--pt2);color:#d6413d}
 .task.on .tnum{background:rgba(255,255,255,.22);color:#fff}
-.tdel{cursor:pointer;opacity:0;font-size:15px;line-height:1;padding:0 3px;border-radius:6px;color:inherit;transition:opacity .18s,background .18s}
-.task:hover .tdel,.task.on .tdel{opacity:.6}
-.tdel:hover{opacity:1!important;background:rgba(228,72,77,.25)}
+.tdel{cursor:pointer;opacity:.45;font-size:16px;line-height:1;padding:2px 5px;border-radius:6px;color:inherit;transition:opacity .18s,background .18s}
+.task:hover .tdel,.task.on .tdel{opacity:.75}
+.tdel:hover{opacity:1!important;background:rgba(228,72,77,.3);color:#fff}
 .pgrid{display:grid;grid-template-columns:minmax(300px,400px) minmax(0,1fr);gap:20px;align-items:start}
 .pside{display:flex;flex-direction:column;gap:20px;min-width:0}
 .pside .card,.pwork{padding:20px}
+.expbox{margin-top:14px;padding-top:4px;border-top:1px dashed var(--line)}
 .sqlbox textarea{min-height:190px}
-#exp .res{max-height:280px}
+#exp .res{max-height:260px}
 #out .res{max-height:380px}
 @media(max-width:1100px){.pgrid{grid-template-columns:1fr}}
 
@@ -250,7 +251,6 @@ summary:hover{color:var(--acc2)}
       <div class="card">
         <details open><summary><b>Схема БД</b></summary><div id="schema" style="margin-top:10px"></div></details>
       </div>
-      <div class="card"><div id="exp"></div></div>
     </div>
     <div class="card pwork">
       <div class="sqlbox" style="margin-top:0">
@@ -262,6 +262,7 @@ summary:hover{color:var(--acc2)}
         <button class="btn" id="hint">Подсказка</button>
         <button class="btn" id="sol">Решение</button>
       </div>
+      <div id="exp" class="expbox"></div>
       <div id="out"></div>
     </div>
   </div>
