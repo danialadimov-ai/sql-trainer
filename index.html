@@ -49,6 +49,14 @@ h2,h3{margin:0 0 12px}h2{font-size:24px;font-weight:800;letter-spacing:-.02em}h3
 .task.on{background:var(--acc);border-color:transparent;color:#fff;box-shadow:0 8px 20px color-mix(in srgb,var(--acc) 35%,transparent)}
 .task.on .dot{border-color:rgba(255,255,255,.6)}
 .task.on .dot.ok{background:#fff;border-color:#fff}
+.tmeta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+#tcount{color:var(--mute);font-size:12px;font-weight:600}
+.sqlbox{background:#10152b;border:1px solid #232947;border-radius:16px;overflow:hidden;margin-top:12px}
+.sqlhead{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#171c33;color:#8e93b5;font-size:12px;font-weight:600;letter-spacing:.05em}
+.sqlbox textarea{background:transparent;border:0;border-radius:0;color:#e8ebff;min-height:150px}
+.sqlbox textarea:focus{outline:none}
+.kbdhint kbd{background:#0b0f22;border:1px solid #2a3155;border-radius:6px;padding:1px 7px;font:11px ui-monospace,Menlo,monospace;color:#aab0d8}
+.res{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--card)}
 .task .n{flex:1;font-size:14px;font-weight:500}
 .tag{font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--code);color:var(--mute)}
 .tag.ai{background:var(--grad);color:#fff}
@@ -152,13 +160,19 @@ summary:hover{color:var(--acc2)}
     <div class="card"><h3 id="listhead" style="cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center">Задачи <span id="listarrow" style="font-weight:400">▾</span></h3><div id="listwrap"><div class="prog"><i id="bar"></i></div><div id="list"></div></div></div>
     </div>
     <div class="card">
+      <div class="tmeta"><span class="tag" id="tl"></span><span id="tcount"></span></div>
       <h2 id="tt"></h2><div id="td" style="color:var(--mute)"></div>
-      <div class="row" style="margin-bottom:0"><span class="tag" id="tl"></span></div>
-      <textarea id="sql" spellcheck="false" placeholder="SELECT ..."></textarea>
+      <div class="sqlbox">
+        <div class="sqlhead"><span>SQL-запрос</span><span class="kbdhint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> — выполнить</span></div>
+        <textarea id="sql" spellcheck="false" placeholder="SELECT ..."></textarea>
+      </div>
       <div class="row">
         <button class="btn p" id="run">Выполнить</button>
         <button class="btn" id="hint">Подсказка</button>
         <button class="btn" id="sol">Решение</button>
+        <span style="flex:1"></span>
+        <button class="btn" id="tprev">← Предыдущая</button>
+        <button class="btn" id="tnext">Следующая →</button>
       </div>
       <div id="out"></div>
       <div id="exp"></div>
@@ -308,6 +322,8 @@ function open(i){
   cur=i;const t=tasks[i];
   $('#tt').textContent=t.title;$('#td').textContent=t.desc;$('#tl').textContent=t.level;
   $('#tl').className='tag '+(t.level==='лёгкий'?'lv1':t.level==='средний'?'lv2':'lv3');
+  const tc=$('#tcount');if(tc)tc.textContent='Задача '+(i+1)+' из '+tasks.length;
+  $('#tprev').disabled=i===0;$('#tnext').disabled=i===tasks.length-1;
   let saved='';try{saved=localStorage.getItem(tkey(t))||''}catch(e){}
   $('#sql').value=saved;$('#out').innerHTML='';renderList();
   if(saved.trim())runCheck(); // восстанавливаем последний результат проверки этой задачи
@@ -319,6 +335,8 @@ let listCollapsed=false;
 try{listCollapsed=localStorage.getItem('sqlt-tasks-collapsed')==='1'}catch(e){}
 const renderListCollapse=()=>{$('#listwrap').style.display=listCollapsed?'none':'';$('#listarrow').textContent=listCollapsed?'▸':'▾'};
 $('#listhead').onclick=()=>{listCollapsed=!listCollapsed;try{localStorage.setItem('sqlt-tasks-collapsed',listCollapsed?'1':'0')}catch(e){}renderListCollapse()};
+$('#tprev').onclick=()=>{if(cur>0)open(cur-1)};
+$('#tnext').onclick=()=>{if(cur<tasks.length-1)open(cur+1)};
 function compare(mine,t){
   const ref=runSql(t.sol),ord=/order\s+by/i.test(t.sol);
   if(JSON.stringify(norm(mine,ord))===JSON.stringify(norm(ref,ord)))return{ok:true};
@@ -722,6 +740,8 @@ for(const id of ['sbq','aiq']){
   el.addEventListener('input',()=>{try{localStorage.setItem('sqlt-draft-'+id,el.value)}catch(e){}});
 }
 $('#sql').addEventListener('input',()=>{try{localStorage.setItem(tkey(tasks[cur]),$('#sql').value)}catch(e){}});
+$('#sql').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runCheck()}});
+$('#sbq').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();$('#sbrun').click()}});
 </script>
 </body>
 </html>
