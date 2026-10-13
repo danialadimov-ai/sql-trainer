@@ -566,6 +566,9 @@ function renderSb(){
   $('#aisettings-btn').style.display=isAdmin?'block':'none';
   if(!isAdmin)$('#aipanel').classList.remove('on');
   $('#authbtn').textContent=canEdit?'Выйти':'Войти';
+  // Песочница скрыта из меню для гостей и появляется только после входа
+  document.querySelector('[data-v=sandbox]').style.display=canEdit?'':'none';
+  if(!canEdit&&$('#sandbox').classList.contains('on'))document.querySelector('[data-v=practice]').click();
   $('#sbstate').innerHTML=canEdit
     ?`<div class="msg ok">Вы вошли в аккаунт: можно выполнять любые запросы к базе. Изменения сохраняются ${srvOn?'на сервере — они доступны с любого компьютера':'в вашей личной копии (в этом браузере)'}.</div>`
     :'<div class="msg info">🔒 Песочница доступна только авторизованным пользователям. Войдите в аккаунт или создайте новый — и сможете изменять свою копию базы любыми запросами.</div><div class="row" style="margin-bottom:0"><button class="btn p" id="sblogin">Войти / Создать аккаунт</button></div>';
